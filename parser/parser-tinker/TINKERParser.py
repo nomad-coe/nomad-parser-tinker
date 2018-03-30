@@ -278,7 +278,7 @@ class TINKERParser(SmartParser.ParserBase):
         self.metaStorage.reset({'startSection' : [['section_run']]})
         self.reset_values()
 
-    def tinker_input_output_files(self, backend, gIndex, section):
+    def tinker_input_output_files(self, backend, gIndex, section, call_level):
         """Called with onClose_x_tinker_section_control_parameters to setup
             topology and trajectory inputs/outputs
 
@@ -316,16 +316,6 @@ class TINKERParser(SmartParser.ParserBase):
 
         #inputOK = self.findInputCmdFileAndRead(parser)
 
-        section_control_Dict = {}
-        section_control_Dict.update(self.cntrlDict)
-        updateDict = {
-            'startSection' : [[PARSERTAG+'_section_control_parameters']],
-            'dictionary'   : section_control_Dict
-            }
-        self.metaStorage.update(updateDict)
-        self.metaStorage.updateBackend(backend.superBackend, 
-                startsection=[PARSERTAG+'_section_control_parameters'],
-                autoopenclose=False)
 
         # Here we update topology info
         # Check if topology files can be loaded
@@ -404,16 +394,6 @@ class TINKERParser(SmartParser.ParserBase):
             trajDone = True
             self.newTraj = True
 
-        if atLeastOneFileExist:
-            updateDict = {
-                    'startSection'   : [[PARSERTAG+'_section_input_output_files']],
-                    'dictionary'     : self.fileDict
-                    }
-            self.metaStorage.update(updateDict)
-            self.metaStorage.updateBackend(backend.superBackend,
-                    startsection=[PARSERTAG+'_section_input_output_files'],
-                    autoopenclose=False)
-
         if self.newTopo:
             if topoDone and atLeastOneFileExist:
                 self.MDData.initializeTopologyFileHandlers(self)
@@ -453,6 +433,7 @@ class TINKERParser(SmartParser.ParserBase):
                 #self.MDcurrentstep = int(self.MDiter)
                 #self.stepcontrolDict.update({"MDcurrentstep" : int(self.MDcurrentstep)})
                 #pass
+        return atLeastOneFileExist
 
     def onOpen_x_tinker_section_control_parameters(self, backend, gIndex, section):
         # keep track of the latest section
@@ -460,6 +441,8 @@ class TINKERParser(SmartParser.ParserBase):
             self.inputControlIndex = gIndex
 
     def onClose_x_tinker_section_control_parameters(self, backend, gIndex, section):
+        # Find input and output files. Read input control parameters
+        atLeastOneFileExist = self.tinker_input_output_files(backend, gIndex, section, "control")
         section_control_Dict = {}
         section_control_Dict.update(self.mdcntrlDict)
         section_control_Dict.update(self.filecntrlDict)
@@ -473,8 +456,17 @@ class TINKERParser(SmartParser.ParserBase):
                 startsection=[PARSERTAG+'_section_control_parameters'],
                 autoopenclose=False)
 
-        # Find input and output files. Read input control parameters
-        self.tinker_input_output_files(backend, gIndex, section)
+        #if atLeastOneFileExist:
+        #    secIOGIndex = backend.openSection(PARSERTAG+'_section_input_output_files')
+        #    updateFileDict = {
+        #            'startSection'   : [[PARSERTAG+'_section_input_output_files']],
+        #            'dictionary'     : self.fileDict
+        #            }
+        #    self.metaStorage.update(updateFileDict)
+        #    self.metaStorage.updateBackend(backend.superBackend,
+        #            startsection=[PARSERTAG+'_section_input_output_files'],
+        #            autoopenclose=False)
+        #    backend.closeSection(PARSERTAG+'_section_input_output_files', secIOGIndex)
 
         # TINKER prints the initial and final energies to the log file.
         if self.MDcurrentstep < 0:
@@ -912,7 +904,7 @@ class TINKERParser(SmartParser.ParserBase):
                     trajfile = filetrajs[self.MDcurrentstep]
             if trajfile is not None:
                 rtn = setMetaStrInDict(self, 'filecntrlDict', 'archive file', trajfile) 
-                self.tinker_input_output_files(backend, gIndex, section)
+                self.tinker_input_output_files(backend, gIndex, section, "traj")
 
             self.onOpen_section_system(backend, None, None)
             self.onClose_section_system(backend, None, None)
@@ -1937,13 +1929,13 @@ class TINKERParser(SmartParser.ParserBase):
                   "tablestartsat"    : r"\s*(?:QN|TN|CG|VM)\s*Iter", 
                   "tableendsat"      : r"^\s*$",
                   "lineFilter"       : {
-                      'QN Iter' : 'ITER',
-                      'TN Iter' : 'ITER',
-                      'VM Iter' : 'ITER',
-                      'CG Iter' : 'ITER',
+                      'QN Iter' : 'ITER1',
+                      'TN Iter' : 'ITER2',
+                      'VM Iter' : 'ITER3',
+                      'CG Iter' : 'ITER4',
                       'F Value' : 'FVALUE',
-                      'G RMS'   : 'GRMS',
-                      'RMS G'   : 'GRMS',
+                      'G RMS'   : 'GRMS1',
+                      'RMS G'   : 'GRMS2',
                       'F Move'  : 'FMove', 
                       'X Move'  : 'XMove',    
                       'FG Call' : 'FGCall'
