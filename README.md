@@ -1,6 +1,6 @@
 # Tinker Parser
 [NOMAD Laboratory CoE](http://nomad-coe.eu) parser for [TINKER](https://dasher.wustl.edu/tinker/)
-## Version 0.0.1
+## Version 0.0.3
 
 This is the parser for Tinker in [TINKER](https://dasher.wustl.edu/tinker/).
 The official version lives at:
