@@ -643,6 +643,49 @@ def get_updateDictionary(self, defname):
             activeSections=['section_energy_van_der_Waals']
             ),
         }
+
+    # Info for section_restricted_uri
+    restrictions = {
+        'number_of_restricted_uri_files' : MetaInfoMap(startpage,
+            value=int(1),
+            #autoSections=True,
+            activeInfo=True,
+            activeSections=['section_restricted_uri']
+            ),
+        'restricted_uri_files' : MetaInfoMap(startpage,
+            #autoSections=True,
+            activeInfo=True,
+            activeSections=['section_restricted_uri'],
+            subfunction={ 
+                'function' : self.parameter_file_name,
+                'supportDict' : self.cntrlDict,
+                },
+            ),
+        'restricted_uri_license' : MetaInfoMap(startpage,
+            value='TINKER License',
+            #autoSections=True,
+            activeInfo=True,
+            activeSections=['section_restricted_uri']
+            ),
+        'restricted_uri_restriction' : MetaInfoMap(startpage,
+            value='any access',
+            #autoSections=True,
+            activeInfo=True,
+            activeSections=['section_restricted_uri']
+            ),
+        'restricted_uri_reason' : MetaInfoMap(startpage,
+            value='propriety license',
+            #autoSections=True,
+            activeInfo=True,
+            activeSections=['section_restricted_uri']
+            ),
+        'restricted_uri_issue_authority' : MetaInfoMap(startpage,
+            value='TINKER',
+            #autoSections=True,
+            activeInfo=True,
+            activeSections=['section_restricted_uri']
+            ),
+        }
    
     # ------------------------------------------
     #   Definitions for section_frame_sequence
@@ -1289,6 +1332,8 @@ def get_updateDictionary(self, defname):
         dictionary = topology
     elif defname == 'singleconfcalc':
         dictionary = singleconfcalc
+    elif defname == 'restrictions':
+        dictionary = restrictions
     elif defname == 'frameseq':
         dictionary = frameseq
     elif defname == 'frameseqend':

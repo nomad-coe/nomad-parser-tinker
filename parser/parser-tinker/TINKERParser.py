@@ -276,7 +276,23 @@ class TINKERParser(SmartParser.ParserBase):
         #self.initialize_values()
         self.secRunOpen = False
         self.metaStorage.reset({'startSection' : [['section_run']]})
+        self.metaStorageRestrict.reset({'startSection' : [['section_restricted_uri']]})
         self.reset_values()
+
+    def parameter_file_name(self, cntrldict, itemdict):
+        """ Function to generate data for parameter files list
+        """
+        working_dir_name = os.path.dirname(os.path.normpath(os.path.abspath(self.fName)))
+        parmmeta = isMetaStrInDict("parameters",self.cntrlDict)
+        filename = []
+        if parmmeta is not None:
+            if self.cntrlDict[parmmeta].value is not None:
+                fname = self.cntrlDict[parmmeta].value
+                filename.append(fname.replace(working_dir_name, '.'+os.path.sep))
+        if filename:
+            return False, filename, itemdict
+        else:
+            return False, None, itemdict
 
     def tinker_input_output_files(self, backend, gIndex, section, call_level):
         """Called with onClose_x_tinker_section_control_parameters to setup
@@ -599,6 +615,30 @@ class TINKERParser(SmartParser.ParserBase):
         #self.stepcontrolDict.update({"follow" : followsteps})
         self.onOpen_section_sampling_method(backend, None, None)
         self.onClose_section_sampling_method(backend, None, None)
+        section_file_Dict = {}
+        section_file_Dict.update(self.fileDict)
+        updateDict = {
+                'startSection' : [[PARSERTAG+'_section_control_parameters']],
+                'dictionary'   : section_file_Dict
+                }
+        self.metaStorage.update(updateDict)
+        self.metaStorage.updateBackend(backend.superBackend, 
+                startsection=[PARSERTAG+'_section_control_parameters'],
+                autoopenclose=False)
+        parmmeta = isMetaStrInDict("parameters",self.cntrlDict)
+        if parmmeta is not None:
+            if self.cntrlDict[parmmeta].value is not None:
+                self.secRestrictGIndex = backend.superBackend.openSection("section_restricted_uri")
+                restrictionsDict = get_updateDictionary(self, 'restrictions')
+                updateDict = {
+                        'startSection' : [['section_restricted_uri']],
+                        'dictionary' : restrictionsDict
+                        }
+                self.metaStorageRestrict.update(updateDict)
+                self.metaStorageRestrict.updateBackend(backend.superBackend, 
+                        startsection=['section_restricted_uri'],
+                        autoopenclose=False)
+                backend.superBackend.closeSection("section_restricted_uri", self.secRestrictGIndex)
 
     def onOpen_section_method(self, backend, gIndex, section):
         # keep track of the latest method section
@@ -1158,6 +1198,17 @@ class TINKERParser(SmartParser.ParserBase):
                     item = self.prune_list(item)
                 oList.append(item)
         return oList
+
+    def checkTinkerParam(self, cmdLine, prmName):
+        try:
+            prm = cmdLine.split()[-1]
+            if "NONE" in prm.upper() or prmName.upper() in prm.upper():
+                prm = None
+            else:
+                prm = ' '.join(cmdLine.split()[1:])
+        except ValueError:
+            prm = None
+        return prm
  
     def readTinkerParameterFile(self, parser, fileName, cntrlDict):
         success = False
@@ -1170,296 +1221,515 @@ class TINKERParser(SmartParser.ParserBase):
         improper=[]
         ureybond=[]
         charge=[]
+        mutate=[]
         if fileName is not None:
             with open(fileName, 'r') as fin:
                 for line in fin:
+                    prm = None
                     if emptyLine.findall(line):
                         continue
-                    cmdLine = ' '.join([x for x in line.strip().split() if x]).upper()
-                    if cmdLine.startswith('#'):
+                    cmdLine = ' '.join([x for x in line.strip().split() if x])
+                    cmdLineUp = cmdLine.upper()
+                    if cmdLine.startswith('#') or cmdLine.startswith('echo'):
                         continue
-                    elif cmdLine.startswith('PARAMETERS'):
-                        rtn = setMetaStrInDict(self, 'cntrlDict', 'parameters', cmdLine.split()[-1])
+                    elif cmdLineUp.startswith('PARAMETERS'):
+                        prm = self.checkTinkerParam(cmdLine, 'parameters')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'parameters', prm)
                         success = rtn[0] if success is False else True
                         continue
-                    elif cmdLine.startswith('ENERGYMIN'):
-                        rtn = setMetaStrInDict(self, 'cntrlDict', 'parameters', cmdLine.split()[-1])
+                    elif cmdLineUp.startswith('VERBOSE'):
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'verbose', True)
                         success = rtn[0] if success is False else True
                         continue
-                    elif cmdLine.startswith('SYSTEM'):
+                    elif cmdLineUp.startswith('ARCHIVE'):
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'archive', True)
+                        success = rtn[0] if success is False else True
                         continue
-                    elif cmdLine.startswith('INITIALISE'):
+                    elif cmdLineUp.startswith('LIGHTS'):
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'lights', True)
+                        success = rtn[0] if success is False else True
                         continue
-                    elif cmdLine.startswith('STEP'):
+                    elif cmdLineUp.startswith('SADDLEPOINT'):
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'saddlepoint', True)
+                        success = rtn[0] if success is False else True
                         continue
-                    elif cmdLine.startswith('BOUNDCOND'):
+                    elif cmdLineUp.startswith('ENFORCE-CHIRALITY'):
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'enforce-chirality', True)
+                        success = rtn[0] if success is False else True
                         continue
-                    elif cmdLine.startswith('MULTIBATH'):
+                    elif cmdLineUp.startswith('NEIGHBOR-LIST'):
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'neighbor-list', True)
+                        success = rtn[0] if success is False else True
                         continue
-                    elif cmdLine.startswith('PRESSURESCALE'):
+                    elif cmdLineUp.startswith('PRINTOUT'):
+                        prm = self.checkTinkerParam(cmdLine, 'printout')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'printout', prm)
+                        success = rtn[0] if success is False else True
                         continue
-                    elif cmdLine.startswith('COVALENTFORM'):
+                    elif cmdLineUp.startswith('DIGITS'):
+                        prm = self.checkTinkerParam(cmdLine, 'digits')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'digit', prm)
+                        success = rtn[0] if success is False else True
                         continue
-                    elif cmdLine.startswith('COMTRANSROT'):
+                    elif cmdLineUp.startswith('SPACEGROUP'):
+                        prm = self.checkTinkerParam(cmdLine, 'spacegroup')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'spacegroup', prm)
+                        success = rtn[0] if success is False else True
                         continue
-                    elif cmdLine.startswith('PRINTOUT'):
+                    elif cmdLineUp.startswith('VDWTYPE'):
+                        prm = self.checkTinkerParam(cmdLine, 'vdwtype')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'vdwtype', prm)
+                        success = rtn[0] if success is False else True
                         continue
-                    elif cmdLine.startswith('WRITETRAJ'):
+                    elif cmdLineUp.startswith('VDW-CUTOFF'):
+                        prm = self.checkTinkerParam(cmdLine, 'vdw-cutoff')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'vdw-cutoff', prm)
+                        success = rtn[0] if success is False else True
                         continue
-                    elif cmdLine.startswith('CONSTRAINT'):
+                    elif cmdLineUp.startswith('VDW-CORRECTION'):
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'vdw-correction', True)
+                        success = rtn[0] if success is False else True
                         continue
-                    elif cmdLine.startswith('FORCE'):
+                    elif cmdLineUp.startswith('EWALD'):
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'ewald', True)
+                        success = rtn[0] if success is False else True
                         continue
-                    elif cmdLine.startswith('PAIRLIST'):
+                    elif cmdLineUp.startswith('ANISO-PRESSURE'):
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'aniso-pressure', True)
+                        success = rtn[0] if success is False else True
                         continue
-                    elif cmdLine.startswith('NONBONDED'):
+                    elif cmdLineUp.startswith('EWALD-CUTOFF'):
+                        prm = self.checkTinkerParam(cmdLine, 'ewald-cutoff')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'ewald-cutoff', prm)
+                        success = rtn[0] if success is False else True
                         continue
-                        rtn = setMetaStrInDict(self, 'cntrlDict', 'TITLE', line.strip())
-                    elif section == 'ENERGYMIN':
-                        for item in cmdLine.split():
-                            addok = False
-                            if enid == 0:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'EMIN-NTEM', item) 
-                            elif enid == 1:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'EMIN-NCYC', item) 
-                            elif enid == 2:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'EMIN-DELE', item) 
-                            elif enid == 3:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'EMIN-DX0', item) 
-                            elif enid == 4:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'EMIN-DXM', item) 
-                            elif enid == 5:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'EMIN-NMIN', item) 
-                            elif enid == 6:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'EMIN-FLIM', item) 
-                            if addok:
-                                enid += 1
-                                success = rtn[0] if success is False else True
-                    elif section == 'SYSTEM':
-                        for item in cmdLine.split():
-                            addok = False
-                            if syid == 0:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'SYS-NPM', item) 
-                            elif syid == 1:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'SYS-NSM', item) 
-                            if addok:
-                                syid += 1
-                                success = rtn[0] if success is False else True
-                    elif section == 'STEP':
-                        for item in cmdLine.split():
-                            addok = False
-                            if stid == 0:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'STEP-NSTLIM', item) 
-                            elif stid == 1:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'STEP-T', item) 
-                            elif stid == 2:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'STEP-DT', item) 
-                            if addok:
-                                stid += 1
-                                success = rtn[0] if success is False else True
-                    elif section == 'MULTIBATH':
-                        for item in cmdLine.split():
-                            addok = False
-                            if mbid == 0:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'BATH-ALG', item) 
-                                try:
-                                    bathalg=int(item)
-                                except (ValueError, TypeError):
-                                    pass
-                            elif(mbid == 1 and bathalg>1):
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'BATH-NUM', item) 
-                            elif((mbid == 1 and bathalg<2) or (mbid == 2 and bathalg>1)):
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'BATH-NBATHS', item)
-                                numbaths=int(item)
-                            elif((mbid >= 2 and mbid < 2+(2*numbaths) and bathalg<2) or 
-                                 (mbid >= 3 and mbid < 3+(2*numbaths) and bathalg>1)):
-                                addok = True
-                                if(((mbid-1)%2==1 and bathalg<2) or 
-                                   ((mbid-2)%2==1 and bathalg>1)):
-                                    if temp == None:
-                                        temp = item
-                                    else:
-                                        temp = temp + ', ' + item
-                                    rtn = setMetaStrInDict(self, 'cntrlDict', 'BATH-TEMP', temp)
-                                elif(((mbid-1)%2==0 and bathalg<2) or 
-                                     ((mbid-2)%2==0 and bathalg>1)):
-                                    if tau == None:
-                                        tau = item
-                                    else:
-                                        tau = tau + ', ' + item
-                                    rtn = setMetaStrInDict(self, 'cntrlDict', 'BATH-TAU', tau)
-                            elif((mbid == 2+(2*numbaths) and bathalg<2) or 
-                                 (mbid == 3+(2*numbaths) and bathalg>1)):
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'BATH-DOFSET', item)
-                                try:
-                                    dofset=int(item)
-                                except (ValueError, TypeError):
-                                    pass
-                            elif((mbid >= 3+(2*numbaths) and mbid < 3+(2*numbaths)+dofset and bathalg<2) or 
-                                 (mbid >= 4+(2*numbaths) and mbid < 4+(2*numbaths)+dofset and bathalg>1)):
-                                addok = True
-                                if last == None:
-                                    last = item
-                                else:
-                                    last = last + ', ' + item
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'BATH-LAST', last)
-                            elif((mbid >= 3+(2*numbaths)+dofset and mbid < 3+(2*numbaths)+(2*dofset) and bathalg<2) or 
-                                 (mbid >= 4+(2*numbaths)+dofset and mbid < 4+(2*numbaths)+(2*dofset) and bathalg>1)):
-                                addok = True
-                                if combath == None:
-                                    combath = item
-                                else:
-                                    combath = combath + ', ' + item
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'BATH-COMBATH', combath)
-                            elif((mbid >= 3+(2*numbaths)+(2*dofset) and mbid < 3+(2*numbaths)+(3*dofset) and bathalg<2) or 
-                                 (mbid >= 4+(2*numbaths)+(2*dofset) and mbid < 4+(2*numbaths)+(3*dofset) and bathalg>1)):
-                                addok = True
-                                if irbath == None:
-                                    irbath = item
-                                else:
-                                    irbath = irbath + ', ' + item
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'BATH-IRBATH', irbath)
-                            if addok:
-                                mbid += 1
-                                success = rtn[0] if success is False else True
-                    elif section == 'PRESSURESCALE':
-                        for item in cmdLine.split():
-                            addok = False
-                            if psid == 0:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'PRES-COUPLE', item) 
-                            elif psid == 1:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'PRES-SCALE', item) 
-                            elif psid == 2:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'PRES-COMP', item) 
-                            elif psid == 3:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'PRES-TAUP', item) 
-                            elif psid == 4:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'PRES-VIRIAL', item) 
-                            elif psid >= 5 and psid <= 7:
-                                addok = True
-                                if aniso is None:
-                                    aniso = item
-                                else:
-                                    aniso = aniso + ', ' + item
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'PRES-ANISO', aniso) 
-                            elif psid >= 8 and psid <= 16:
-                                addok = True
-                                if pres0 is None:
-                                    pres0 = item
-                                else:
-                                    pres0 = pres0 + ', ' + item
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'PRES-INIT0', pres0) 
-                            if addok:
-                                psid += 1
-                                success = rtn[0] if success is False else True
-                    elif section == 'INITIALISE':
-                        for item in cmdLine.split():
-                            addok = False
-                            if inid == 0:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'INIT-NTIVEL', item) 
-                            elif inid == 1:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'INIT-NTISHK', item) 
-                            elif inid == 2:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'INIT-NTINHT', item) 
-                            elif inid == 3:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'INIT-NTINHB', item) 
-                            elif inid == 4:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'INIT-NTISHI', item) 
-                            elif inid == 5:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'INIT-NTIRTC', item) 
-                            elif inid == 6:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'INIT-NTICOM', item) 
-                            elif inid == 7:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'INIT-NTISTI', item) 
-                            elif inid == 8:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'INIT-IG', item) 
-                            elif inid == 9:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'INIT-TEMPI', item) 
-                            if addok:
-                                inid += 1
-                                success = rtn[0] if success is False else True
-                    elif section == 'BOUNDCOND':
-                        for item in cmdLine.split():
-                            addok = False
-                            if bcid == 0:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'BCND-NTB', item) 
-                            elif bcid == 1:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'BCND-NDFMIN', item) 
-                            if addok:
-                                bcid += 1
-                                success = rtn[0] if success is False else True
-                    elif section == 'PRINTOUT':
-                        for item in cmdLine.split():
-                            addok = False
-                            if prid == 0:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'PRNT-NTPR', item) 
-                            elif prid == 1:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'PRNT-NTPP', item) 
-                            if addok:
-                                prid += 1
-                                success = rtn[0] if success is False else True
-                    elif section == 'WRITETRAJ':
-                        for item in cmdLine.split():
-                            addok = False
-                            if wtid == 0:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'WRIT-NTWX', item) 
-                            elif wtid == 1:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'WRIT-NTWSE', item) 
-                            elif wtid == 2:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'WRIT-NTWV', item) 
-                            elif wtid == 3:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'WRIT-NTWF', item) 
-                            elif wtid == 4:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'WRIT-NTWE', item) 
-                            elif wtid == 5:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'WRIT-NTWG', item) 
-                            elif wtid == 6:
-                                addok = True
-                                rtn = setMetaStrInDict(self, 'cntrlDict', 'WRIT-NTWB', item) 
-                            if addok:
-                                wtid += 1
-                                success = rtn[0] if success is False else True
+                    elif cmdLineUp.startswith('PME-GRID'):
+                        prm = self.checkTinkerParam(cmdLine, 'pme-grid')
+                        if prm is not None:
+                            prm = ','.join(prm.split())
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'pme-grid', prm)
+                        success = rtn[0] if success is False else True
+                        continue
+                    elif cmdLineUp.startswith('PME-ORDER'):
+                        prm = self.checkTinkerParam(cmdLine, 'pme-order')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'pme-order', prm)
+                        success = rtn[0] if success is False else True
+                        continue
+                    elif cmdLineUp.startswith('RADIUSRULE'):
+                        prm = self.checkTinkerParam(cmdLine, 'radiusrule')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'radiusrule', prm)
+                        success = rtn[0] if success is False else True
+                        continue
+                    elif cmdLineUp.startswith('RADIUSRULE'):
+                        prm = self.checkTinkerParam(cmdLine, 'radiusrule')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'radiusrule', prm)
+                        success = rtn[0] if success is False else True
+                        continue
+                    elif cmdLineUp.startswith('RADIUSTYPE'):
+                        prm = self.checkTinkerParam(cmdLine, 'radiustype')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'radiustype', prm)
+                        success = rtn[0] if success is False else True
+                        continue
+                    elif cmdLineUp.startswith('RADIUSSIZE'):
+                        prm = self.checkTinkerParam(cmdLine, 'radiussize')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'radiussize', prm)
+                        success = rtn[0] if success is False else True
+                        continue
+                    elif cmdLineUp.startswith('EPSILONRULE'):
+                        prm = self.checkTinkerParam(cmdLine, 'epsilonrule')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'epsilonrule', prm)
+                        success = rtn[0] if success is False else True
+                        continue
+                    elif cmdLineUp.startswith('DIELECTRIC'):
+                        prm = self.checkTinkerParam(cmdLine, 'dielectric')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'dielectric', prm)
+                        success = rtn[0] if success is False else True
+                        continue
+                    elif cmdLineUp.startswith('A-AXIS'):
+                        prm = self.checkTinkerParam(cmdLine, 'a-axis')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'a-axis', prm)
+                        success = rtn[0] if success is False else True
+                        continue
+                    elif cmdLineUp.startswith('B-AXIS'):
+                        prm = self.checkTinkerParam(cmdLine, 'b-axis')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'b-axis', prm)
+                        success = rtn[0] if success is False else True
+                        continue
+                    elif cmdLineUp.startswith('C-AXIS'):
+                        prm = self.checkTinkerParam(cmdLine, 'c-axis')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'c-axis', prm)
+                        success = rtn[0] if success is False else True
+                        continue
+                    elif cmdLineUp.startswith('ALPHA'):
+                        prm = self.checkTinkerParam(cmdLine, 'alpha')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'alpha', prm)
+                        success = rtn[0] if success is False else True
+                        continue
+                    elif cmdLineUp.startswith('BETA'):
+                        prm = self.checkTinkerParam(cmdLine, 'beta')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'beta', prm)
+                        success = rtn[0] if success is False else True
+                        continue
+                    elif cmdLineUp.startswith('GAMMA'):
+                        prm = self.checkTinkerParam(cmdLine, 'gamma')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'gamma', prm)
+                        success = rtn[0] if success is False else True
+                        continue
+                    elif cmdLineUp.startswith('INTEGRATOR'):
+                        prm = self.checkTinkerParam(cmdLine, 'integrator')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'integrator', prm)
+                        success = rtn[0] if success is False else True
+                        continue
+                    elif cmdLineUp.startswith('BAROSTAT'):
+                        prm = self.checkTinkerParam(cmdLine, 'barostat')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'barostat', prm)
+                        success = rtn[0] if success is False else True
+                        continue
+                    elif cmdLineUp.startswith('TAU-PRESSURE'):
+                        prm = self.checkTinkerParam(cmdLine, 'tau-pressure')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'tau-pressure', prm)
+                        success = rtn[0] if success is False else True
+                        continue
+                    elif cmdLineUp.startswith('TAU-TEMPERATURE'):
+                        prm = self.checkTinkerParam(cmdLine, 'tau-temperature')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'tau-temperature', prm)
+                        success = rtn[0] if success is False else True
+                        continue
+                    elif cmdLineUp.startswith('RATTLE'):
+                        prm = self.checkTinkerParam(cmdLine, 'rattle')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'rattle', prm)
+                        success = rtn[0] if success is False else True
+                        continue
+                    elif cmdLineUp.startswith('LAMBDA'):
+                        prm = self.checkTinkerParam(cmdLine, 'lambda')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'lambda', prm)
+                        success = rtn[0] if success is False else True
+                        continue
+                    elif cmdLineUp.startswith('POLAR-EPS'):
+                        prm = self.checkTinkerParam(cmdLine, 'polar-eps')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'polar-eps', prm)
+                        success = rtn[0] if success is False else True
+                        continue
+                    elif cmdLineUp.startswith('VIB-ROOTS'):
+                        prm = self.checkTinkerParam(cmdLine, 'vib-roots')
+                        rtn = setMetaStrInDict(self, 'cntrlDict', 'vib-roots', prm)
+                        success = rtn[0] if success is False else True
+                        continue
+        return success
+
+    def findFileInDir(self, parser, fileMetaName, cntrlDictName):
+        filecntrlDict = getattr(self, cntrlDictName)
+        if filecntrlDict is not None:
+            infileKey = isMetaStrInDict(fileMetaName, filecntrlDict)
+        infile = None
+        paramFile = None
+        if infileKey is not None:
+            if filecntrlDict[infileKey].value is not None:
+                infile = filecntrlDict[infileKey].value
+        if infile is not None:
+            #self.working_dir_name
+            #working_dir_name = os.path.dirname(os.path.abspath(os.getcwd()))
+            thisfile=os.path.normpath(infile)
+            findfile=os.path.basename(thisfile)
+            dirlisti=thisfile.split(os.path.sep)
+            dirlist=self.prune_list(dirlisti)
+            sepp=os.path.sep
+
+            subdirlist = [sepp.join(dirlist[dr:-1]) for dr in range(len(dirlist))]
+            for sid, sdir in enumerate(subdirlist):
+                if sdir == '':
+                    subdirlist[sid] = os.curdir
+
+            matchdirs = []
+            for root, dirnames, filenames in os.walk(self.working_dir_name):
+                for possubdir in subdirlist:
+                    for subdir in fnmatch.filter(dirnames, possubdir):
+                        matchdirs.append(os.path.join(root, subdir))
+            if matchdirs:
+                pass
+            else:
+                matchdirs.append(self.working_dir_name)
+
+            matches = []
+            for root, dirnames, filenames in os.walk(self.working_dir_name):
+                if root == self.working_dir_name:
+                    for filename in fnmatch.filter(filenames, findfile):
+                        matches.append(os.path.join(root, filename))
+                        break
+            if matches:
+                pass
+            else:
+                for root, dirnames, filenames in os.walk(self.working_dir_name):
+                    for mdir in matchdirs:
+                        if mdir+sepp+findfile == root+sepp+findfile:
+                            for filename in fnmatch.filter(filenames, findfile):
+                                matches.append(os.path.join(root, filename))
+                                break
+ 
+            inputFile = None
+            if matches:
+                inputFile = matches[0]
+
+            if inputFile is not None:
+                paramFile = os.path.normpath(os.path.abspath(inputFile))
+
+        return paramFile
+
+    def generateARCfileFromSequenceFiles(self, parser, fileListInDir, arcname):
+        xyzSeqList = []
+        working_dir_name = os.path.dirname(os.path.abspath(self.fName))
+        addfile = os.path.normpath(working_dir_name+os.path.sep+arcname)
+        for fname in self.tinkerFiles:
+            if('.arc' not in fname and 
+               '.xyz' not in fname and 
+               fname in fileListInDir):
+                xyzSeqList.append(working_dir_name+os.path.sep+fname)
+        anyFileExist=False
+        for fname in xyzSeqList:
+            with open(fname, 'rb') as fin:
+                if fin.read():
+                    anyFileExist=True
+                    fin.close()
+        if anyFileExist:
+            with open(addfile, 'wb') as fout:
+                for fname in xyzSeqList:
+                    with open(fname, 'rb') as fin:
+                        fout.write(fin.read())
+
+    def fetchInfoFromInputOutput(self, parser):
+        self.recordList.write('   #######################################   ')
+        working_dir_name = os.path.dirname(os.path.abspath(self.fName))
+        fileList = [x for x in os.walk(os.path.abspath(working_dir_name))]
+        filesListInDir = []
+        try:
+            getattr(self, "filesInOutputDir")
+        except AttributeError:
+            self.filesInOutputDir = {}
+            for fdir, fchilds, fnames in fileList:
+                for fname in fnames:
+                    fkeyname = os.path.normpath(os.path.join(fdir, fname))
+                    self.filesInOutputDir.update({fkeyname.upper():fkeyname})
+        for fdir, fchilds, fnames in fileList:
+            for fname in fnames:
+                filesListInDir.append(fname)
+        self.tinkerRunFiles = {}
+        self.tinkerFiles = []
+        self.tinkerFileSteps = []
+        self.tinkerFileTimes = []
+        self.tinkerAveSteps = []
+        self.tinkerAveTimes = []
+        self.tinkerFirstStep = None
+        self.tinkerRunMD = False
+        fileFound = False
+        textFiles = None
+        self.tinkerKeyFile = None
+        self.MDsteps = 0
+        self.MDtimestep = None
+        step = 0
+        mdstart = 0
+        mdend = 1
+        self.recordList.seek(0)
+        runnum=-1
+        runstart = 0
+        runend = 14
+        header = False
+        for li, line in enumerate(self.recordList):
+            upLine = line.upper()
+            if 'OPTIMIZATION' in upLine:
+                mdstart = li
+            if 'MOLECULAR DYNAMICS TRAJECTORY' in upLine:
+                self.tinkerRunMD = True
+                mdstart = li
+            if 'ITER' in upLine and 'VALUE' in upLine and 'RMS' in upLine:
+                mdstart = li
+            if 'MD STEP' in upLine:
+                self.tinkerRunMD = True
+                mdstart = li
+            if ''.join(line.strip().split()) == '':
+                mdend = li
+            if 'AVERAGE' in upLine and 'VALUES' in upLine:
+                avestep = int(' '.join(line.strip().split()).split()[-3])
+                if self.tinkerFirstStep is None:
+                    self.tinkerFirstStep = avestep
+                else:
+                    if avestep<self.tinkerFirstStep:
+                        self.tinkerFirstStep = avestep
+                self.tinkerAveSteps.append(avestep)
+            if 'SIMULATION' in upLine and 'TIME' in upLine:
+                self.tinkerAveTimes.append(float(' '.join(line.strip().split()).split()[2]))
+            if 'INSTANTANEOUS' in upLine and 'VALUES' in upLine:
+                inststep = int(' '.join(line.strip().split()).split()[-3])
+                if self.tinkerFirstStep is None:
+                    self.tinkerFirstStep = inststep
+                else:
+                    if inststep<self.tinkerFirstStep:
+                        self.tinkerFirstStep = inststep
+                self.tinkerFileSteps.append(inststep)
+            if 'CURRENT' in upLine and 'TIME' in upLine:
+                self.tinkerFileTimes.append(float(' '.join(line.strip().split()).split()[2]))
+            if 'COORDINATE' in upLine and 'FILE' in upLine:
+                fileFound = True
+                self.tinkerFiles.append(' '.join(line.strip().split()).split()[-1])
+            if '#######' in line:
+                break
+
+        self.recordList.seek(0)
+        mdstep=False
+        avestep=False
+        inststep=False
+        for li, line in enumerate(self.recordList):
+            if li >= mdstart and li <= mdend:
+                upLine = line.upper()
+                if 'MD STEP' in upLine or ('ITER' in upLine and 'VALUE' in upLine):
+                    mdstep=True
+                if 'AVERAGE VALUES' in upLine:
+                    avestep=True
+                if 'INSTANTANEOUS VALUES' in upLine:
+                    inststep=True
+                if mdstep:
+                    sl = line.strip().split()
+                    if len(sl)>3:
+                        try:
+                            step = int(sl[0])
+                            if step> self.MDsteps:
+                                self.MDsteps = step
+                        except(ValueError, TypeError):
+                            pass
+                if avestep or inststep:
+                    if 'DYNAMICS STEPS' in upLine:
+                        sl = line.strip().split()
+                        if len(sl)>3:
+                            try:
+                                step = int(sl[-3])
+                                if step > self.MDsteps:
+                                    self.MDsteps = step
+                            except(ValueError, TypeError):
+                                pass
+
+        if self.MDsteps is not None:
+            nstepKey = isMetaStrInDict("NSTEP", self.cntrlDict)
+            if nstepKey is not None:
+                self.cntrlDict[nstepKey].activeInfo = True
+                self.cntrlDict[nstepKey].value = self.MDsteps
+
+        if self.MDtimestep is None:
+            if len(self.tinkerFileSteps)>0 and len(self.tinkerFileTimes)>0:
+                self.MDtimestep = self.tinkerFileTimes[0]/self.tinkerFileSteps[0]
+        if self.MDtimestep is None:
+            if len(self.tinkerAveSteps)>0 and len(self.tinkerAveTimes)>0:
+                self.MDtimestep = self.tinkerAveTimes[0]/self.tinkerAveSteps[0]
+
+        if self.MDtimestep is not None:
+            nstepKey = isMetaStrInDict("STEP-DT", self.cntrlDict)
+            if nstepKey is not None:
+                self.cntrlDict[nstepKey].activeInfo = True
+                self.cntrlDict[nstepKey].value = self.MDtimestep
+
+        # First find tinker run name from output files such as Coordinate File outputs
+        # If there is no output file than
+        # find all .key files in working dir
+        # and try match the base names of these files with the output log file that 
+        # parser is working on.
+        # If none of the above strategies work, use default key file name tinker.key
+        # Finally, try readinf input key file if there is one
+        if fileFound is True:
+            coordfilename = os.path.basename(self.tinkerFiles[0])
+            coordexts = MDDA.get_fileExtensions(coordfilename)
+            if len(coordexts)>0:
+                self.tinkerBaseName = coordexts[0]
+                self.tinkerKeyFile = self.tinkerBaseName + '.key'
+        if self.tinkerKeyFile is None:
+            for tfile in filesListInDir:
+                if '.KEY' in tfile.upper():
+                    fname = os.path.basename(tfile)
+                    fexts = MDDA.get_fileExtensions(fname)
+                    if len(fexts)>0:
+                        if fexts[0].upper() in os.path.basename(self.fName).upper():
+                            coordfilename = os.path.basename(tfile)
+                            coordexts = MDDA.get_fileExtensions(coordfilename)
+                            self.tinkerBaseName = coordexts[0]
+                            self.tinkerKeyFile = tfile
+                            break
+        if self.tinkerKeyFile is None and textFiles is not None:
+            for tfile in filesListInDir:
+                if 'TINKER.KEY' in tfile.upper():
+                    coordfilename = os.path.basename(tfile)
+                    coordexts = MDDA.get_fileExtensions(coordfilename)
+                    self.tinkerBaseName = coordexts[0]
+                    self.tinkerKeyFile = tfile
+                    break
+        if self.tinkerKeyFile is None and textFiles is not None:
+            for tfile in filesListInDir:
+                if '.KEY' in tfile.upper():
+                    coordfilename = os.path.basename(tfile)
+                    coordexts = MDDA.get_fileExtensions(coordfilename)
+                    self.tinkerBaseName = coordexts[0]
+                    self.tinkerKeyFile = tfile
+                    break
+
+        self.tinkerTrajSteps = []
+        if fileFound is True:
+            rtn = setMetaStrInDict(self, 'filecntrlDict', 'coordinate file list', ','.join(self.tinkerFiles)) 
+            self.tinkerRunFiles.update({'coordinate file list' : ','.join(self.tinkerFiles)})
+        if self.secRunGIndex<1:
+            xyzfile = self.tinkerBaseName + '.xyz'
+        elif self.secRunGIndex>0:
+            xyzfile = self.tinkerBaseName + '.xyz_' + str(self.secRunGIndex+1)
+        outxyzfile = self.tinkerBaseName + '.xyz_' + str(self.secRunGIndex+2)
+        dynfile = self.tinkerBaseName + '.dyn'
+        corfile = self.tinkerBaseName + '.001'
+        arcfile = self.tinkerBaseName + '.arc'
+        if xyzfile in filesListInDir:
+            rtn = setMetaStrInDict(self, 'filecntrlDict', 'topology file', xyzfile) 
+            self.tinkerRunFiles.update({'topology file' : xyzfile})
+            self.tinkerTrajSteps.append(1)
+            if self.tinkerFirstStep not in self.tinkerTrajSteps:
+                self.tinkerTrajSteps.append(self.tinkerFirstStep)
+        if self.tinkerFileSteps:
+            for trajst in self.tinkerFileSteps:
+                if trajst not in self.tinkerTrajSteps:
+                    self.tinkerTrajSteps.append(trajst)
+        if outxyzfile in filesListInDir:
+            rtn = setMetaStrInDict(self, 'filecntrlDict', 'final configuration file', outxyzfile) 
+            self.tinkerRunFiles.update({'final configuration file' : outxyzfile})
+            if self.MDsteps not in self.tinkerTrajSteps:
+                self.tinkerTrajSteps.append(self.MDsteps)
+        if xyzfile in filesListInDir:
+            rtn = setMetaStrInDict(self, 'filecntrlDict', 'initial configuration file', xyzfile) 
+            self.tinkerRunFiles.update({'initial configuration file' : xyzfile})
+        if self.tinkerRunMD is True:
+            if dynfile in filesListInDir:
+                rtn = setMetaStrInDict(self, 'filecntrlDict', 'restart file', dynfile) 
+                self.tinkerRunFiles.update({'restart file' : dynfile})
+                if self.MDsteps not in self.tinkerTrajSteps:
+                    self.tinkerTrajSteps.append(self.MDsteps)
+            if corfile in filesListInDir:
+                rtn = setMetaStrInDict(self, 'filecntrlDict', 'initial trajectory file', corfile) 
+                self.tinkerRunFiles.update({'initial trajectory file' : corfile})
+            if arcfile in filesListInDir and arcfile in self.tinkerFiles:
+                rtn = setMetaStrInDict(self, 'filecntrlDict', 'archive file', arcfile) 
+                self.tinkerRunFiles.update({'archive file' : arcfile})
+
+        self.tinkerXYZSeqList = {}
+        if arcfile not in self.tinkerFiles:
+            trajinstance = 0
+            for fname in self.tinkerFiles:
+                if('.arc' not in fname and 
+                   '.xyz' not in fname and 
+                   fname in filesListInDir):
+                    self.tinkerXYZSeqList.update({
+                        self.tinkerFileSteps[
+                            trajinstance] : working_dir_name+os.path.sep+fname
+                        })
+                    trajinstance += 1
+        #    self.generateARCfileFromSequenceFiles(parser, filesListInDir, arcfile)
+        #    rtn = setMetaStrInDict(self, 'filecntrlDict', 'archive file', arcfile) 
+        #    self.tinkerRunFiles.update({'archive file' : arcfile})
+
+        
+        if self.tinkerKeyFile is not None:
+            rtn = setMetaStrInDict(self, 'filecntrlDict', 'key file', self.tinkerKeyFile) 
+            self.findInputCmdFileAndRead(parser)
         return success
 
     def findFileInDir(self, parser, fileMetaName, cntrlDictName):
@@ -1785,10 +2055,10 @@ class TINKERParser(SmartParser.ParserBase):
 
     def findInputCmdFileAndRead(self, parser):
         success = None
-        paramFile = self.findFileInDir(parser, "key file", "filecntrlDict")
-        if paramFile is not None:
-            self.inputCntrlFile = paramFile
-            success = self.readTinkerParameterFile(parser, paramFile, 'cntrlDict')
+        tkeyFile = self.findFileInDir(parser, "key file", "filecntrlDict")
+        if tkeyFile is not None:
+            self.inputCntrlFile = tkeyFile
+            success = self.readTinkerParameterFile(parser, tkeyFile, 'cntrlDict')
         return success
 
     def build_subMatchers(self):
