@@ -1,7 +1,6 @@
 from builtins import map
 from builtins import range
 from builtins import object
-import setup_paths
 import numpy as np
 import nomadcore.ActivateLogging
 from nomadcore.caching_backend import CachingLevel
@@ -10,9 +9,9 @@ from nomadcore.smart_parser import SmartParserCommon as SmartParser
 from nomadcore.smart_parser.SmartParserCommon import get_metaInfo, conv_str, conv_int, conv_float, open_section
 from nomadcore.smart_parser.SmartParserDictionary import getList_MetaStrInDict, getDict_MetaStrInDict
 from nomadcore.smart_parser.SmartParserDictionary import isMetaStrInDict, setMetaStrInDict, copyMetaDictToDict
-from TINKERDictionary import get_updateDictionary, set_Dictionaries
-from TINKERCommon import PARSERNAME, PROGRAMNAME, PARSERVERSION, PARSERTAG, LOGGER
-from TINKERCommon import PARSER_INFO_DEFAULT, META_INFO_PATH, set_excludeList, set_includeList
+from .TINKERDictionary import get_updateDictionary, set_Dictionaries
+from .TINKERCommon import PARSERNAME, PROGRAMNAME, PARSERVERSION, PARSERTAG, LOGGER
+from .TINKERCommon import PARSER_INFO_DEFAULT, META_INFO_PATH, set_excludeList, set_includeList
 from nomadcore.md_data_access import MDDataAccess as MDDA
 #from nomadcore.md_data_access.MDDataAccess import is_file_binary, is_binary_string
 import argparse
@@ -34,7 +33,7 @@ TEXTCHARS = bytearray({7,8,9,10,12,13,27} | set(range(0x20, 0x100)) - {0x7f})
 
 def is_file_binary(fName, checkBytes=None):
     if checkBytes is None:
-        checkBytes = 1024 
+        checkBytes = 1024
     with open(fName, 'rb') as fin:
         testin = fin.read(checkBytes)
     if is_binary_string(testin):
@@ -64,7 +63,7 @@ class TINKERParser(SmartParser.ParserBase):
                                }
         SmartParser.ParserBase.__init__(
             self, re_program_name=re.compile(r"\s*"+PROGRAMNAME+"$"),
-            parsertag=PARSERTAG, metainfopath=META_INFO_PATH, 
+            parsertag=PARSERTAG, metainfopath=META_INFO_PATH,
             parserinfodef=PARSER_INFO_DEFAULT, recorderOn=True)
 
         set_Dictionaries(self)
@@ -82,27 +81,27 @@ class TINKERParser(SmartParser.ParserBase):
             metaInfo = self.metaInfoEnv.infoKinds[name]
             if (name.startswith(PARSERTAG + '_mdin_') and
                 metaInfo.kindStr == "type_document_content" and
-                (PARSERTAG + "_mdin_method" in metaInfo.superNames or 
-                 PARSERTAG + "_mdin_run" in metaInfo.superNames or 
+                (PARSERTAG + "_mdin_method" in metaInfo.superNames or
+                 PARSERTAG + "_mdin_run" in metaInfo.superNames or
                  PARSERTAG + "_mdin_system" in metaInfo.superNames) or
                 name.startswith(PARSERTAG + '_parm_') and
                 metaInfo.kindStr == "type_document_content" and
-                (PARSERTAG + "_mdin_method" in metaInfo.superNames or 
+                (PARSERTAG + "_mdin_method" in metaInfo.superNames or
                  PARSERTAG + "_mdin_run" in metaInfo.superNames or
                  PARSERTAG + "_mdin_system" in metaInfo.superNames) or
                 #name.startswith(PARSERTAG + '_mdin_file_') and
                 name.startswith(PARSERTAG + '_inout_file_') or
                 #metaInfo.kindStr == "type_document_content" and
-                #(PARSERTAG + "_section_input_output_files" in metaInfo.superNames or 
+                #(PARSERTAG + "_section_input_output_files" in metaInfo.superNames or
                 # "section_run" in metaInfo.superNames) or
                 name.startswith(PARSERTAG + '_inout_control_') or
-                #(PARSERTAG + "_section_control_parameters" in metaInfo.superNames) or 
+                #(PARSERTAG + "_section_control_parameters" in metaInfo.superNames) or
                 #name.startswith(PARSERTAG + '_mdin_') and
                 #(PARSERTAG + "_section_control_parameters" in metaInfo.superNames) or
                 name.startswith(PARSERTAG + '_mdout_') or
                 name.startswith(PARSERTAG + '_mdout_') and
                 #metaInfo.kindStr == "type_document_content" and
-                (PARSERTAG + "_mdout_method" in metaInfo.superNames or 
+                (PARSERTAG + "_mdout_method" in metaInfo.superNames or
                  PARSERTAG + "_mdout_system" in metaInfo.superNames or
                  "section_run" in metaInfo.superNames or
                  PARSERTAG + "_mdout_single_configuration_calculation" in metaInfo.superNames)
@@ -251,8 +250,8 @@ class TINKERParser(SmartParser.ParserBase):
     def onClose_section_run(self, backend, gIndex, section):
         """Trigger called when section_run is closed.
 
-        Write the keywords from control parametres and 
-        the TINKER output from the parsed log output, 
+        Write the keywords from control parametres and
+        the TINKER output from the parsed log output,
         which belong to settings_run.
         Variables are reset to ensure clean start for new run.
         """
@@ -265,7 +264,7 @@ class TINKERParser(SmartParser.ParserBase):
                 'dictionary' : section_frameseq_Dict
                 }
         self.metaStorage.update(updateFrameDict)
-        self.metaStorage.updateBackend(backend.superBackend, 
+        self.metaStorage.updateBackend(backend.superBackend,
                 startsection=['section_frame_sequence'],
                 autoopenclose=False)
         backend.addValue("frame_sequence_to_sampling_ref", self.secSamplingGIndex)
@@ -300,14 +299,14 @@ class TINKERParser(SmartParser.ParserBase):
 
         Determine whether topology, trajectory and input coordinate files are
         supplied to the parser
-        
+
         Initiates topology and trajectory file handles.
 
-        Captures topology, atomic positions, atom labels, lattice vectors and 
-        stores them before section_system and 
+        Captures topology, atomic positions, atom labels, lattice vectors and
+        stores them before section_system and
         section_single_configuration_calculation are encountered.
         """
-        # Checking whether topology, input 
+        # Checking whether topology, input
         # coordinates and trajectory files exist
         fileList=None
         fKey = PARSERTAG + '_inout_file_'
@@ -468,7 +467,7 @@ class TINKERParser(SmartParser.ParserBase):
             'dictionary'   : section_control_Dict
             }
         self.metaStorage.update(updateDict)
-        self.metaStorage.updateBackend(backend.superBackend, 
+        self.metaStorage.updateBackend(backend.superBackend,
                 startsection=[PARSERTAG+'_section_control_parameters'],
                 autoopenclose=False)
 
@@ -495,8 +494,8 @@ class TINKERParser(SmartParser.ParserBase):
         ninputstep = 0
         noutputstep = 0
         ntrajsteps = 0
-        nvelsteps = 0 
-        nforcesteps = 0 
+        nvelsteps = 0
+        nforcesteps = 0
         filesteps = None
         filefreq = None
         numSecRun = str(self.secRunGIndex)
@@ -545,7 +544,7 @@ class TINKERParser(SmartParser.ParserBase):
         if noutputKey is not None:
             if self.filecntrlDict[noutputKey].activeInfo:
                 noutputstep = 1
-        
+
         if nlogsteps>0:
             logsteps = [i for i in range(1, nsteps, nlogsteps)]
             logsteps.append(nsteps)
@@ -622,7 +621,7 @@ class TINKERParser(SmartParser.ParserBase):
                 'dictionary'   : section_file_Dict
                 }
         self.metaStorage.update(updateDict)
-        self.metaStorage.updateBackend(backend.superBackend, 
+        self.metaStorage.updateBackend(backend.superBackend,
                 startsection=[PARSERTAG+'_section_control_parameters'],
                 autoopenclose=False)
         parmmeta = isMetaStrInDict("parameters",self.cntrlDict)
@@ -635,7 +634,7 @@ class TINKERParser(SmartParser.ParserBase):
                         'dictionary' : restrictionsDict
                         }
                 self.metaStorageRestrict.update(updateDict)
-                self.metaStorageRestrict.updateBackend(backend.superBackend, 
+                self.metaStorageRestrict.updateBackend(backend.superBackend,
                         startsection=['section_restricted_uri'],
                         autoopenclose=False)
                 backend.superBackend.closeSection("section_restricted_uri", self.secRestrictGIndex)
@@ -681,13 +680,13 @@ class TINKERParser(SmartParser.ParserBase):
             'dictionary' : section_sampling_Dict
             }
         self.metaStorage.update(updateDict)
-        self.metaStorage.updateBackend(backend.superBackend, 
+        self.metaStorage.updateBackend(backend.superBackend,
                 startsection=['section_run'],
                 #startsection=['section_sampling_method'],
                 autoopenclose=False)
         if (gIndex is None or gIndex == -1 or gIndex == "-1"):
             backend.superBackend.closeSection("section_sampling_method", self.secSamplingGIndex)
-    
+
     def onOpen_section_topology(self, backend, gIndex, section):
         # keep track of the latest topology description section
         if (gIndex is None or gIndex == -1 or gIndex == "-1"):
@@ -706,7 +705,7 @@ class TINKERParser(SmartParser.ParserBase):
             'dictionary' : section_topology_Dict
             }
         self.metaStorage.update(updateDict)
-        self.metaStorage.updateBackend(backend.superBackend, 
+        self.metaStorage.updateBackend(backend.superBackend,
                 startsection=['section_topology'],
                 autoopenclose=False)
         self.topology_atom_type_and_interactions(backend, gIndex)
@@ -732,7 +731,7 @@ class TINKERParser(SmartParser.ParserBase):
             SloppyBackend = backend.superBackend
         else:
             SloppyBackend = backend
- 
+
         numatoms = None
         if self.numatoms is not None:
             numatoms = self.numatoms
@@ -758,11 +757,11 @@ class TINKERParser(SmartParser.ParserBase):
         if self.trajectory is not None:
             if self.trajectory.unitcell_vectors is None:
                 self.trajectory.unitcell_vectors = unit_vectors
-        
+
         if self.topology:
             if self.newTopo:
 #            if (self.secTopologyGIndex is None or
-#                (self.secTopologyGIndex == -1 or 
+#                (self.secTopologyGIndex == -1 or
 #                self.secTopologyGIndex == "-1")):
                 self.onOpen_section_topology(backend, None, None)
                 self.onClose_section_topology(backend, None, None)
@@ -775,7 +774,7 @@ class TINKERParser(SmartParser.ParserBase):
         if self.trajectory is not None:
             coordinates=self.trajectory
             positions=self.atompositions
-        elif(self.inputcoords is not None and 
+        elif(self.inputcoords is not None and
              self.MDcurrentstep == steps[0]):
             coordinates=self.inputcoords
             positions=self.inputpositions
@@ -802,9 +801,9 @@ class TINKERParser(SmartParser.ParserBase):
             SloppyBackend.addArrayValues('atom_positions', np.transpose(np.asarray(
                 self.metaStorage.convertUnits(positions, "nano-meter", self.unitDict))))
             if coordinates.velocities is not None:
-                # Velocities in PDB files are stored in A/ps units.(PDB files are read for input 
+                # Velocities in PDB files are stored in A/ps units.(PDB files are read for input
                 #     coordinates, velocities, and forces)
-                # Velocities in TINKER binary/DCD files are stored in TINKER internal units and must be multiplied 
+                # Velocities in TINKER binary/DCD files are stored in TINKER internal units and must be multiplied
                 #     by PDBVELFACTOR=20.45482706 to convert to A/ps. (These files are used for output trajectory)
                 SloppyBackend.addArrayValues('atom_velocities', np.transpose(np.asarray(
                     self.metaStorage.convertUnits(
@@ -846,7 +845,7 @@ class TINKERParser(SmartParser.ParserBase):
             if np.linalg.norm(unit_vectors[2])>0.0:
                 unit_periodicity[2]=True
             SloppyBackend.addArrayValues('configuration_periodic_dimensions', unit_periodicity)
- 
+
         if self.topology is not None:
             self.topology_system_name(backend, gIndex)
 
@@ -911,7 +910,7 @@ class TINKERParser(SmartParser.ParserBase):
             #    }
             #self.secVDWGIndex = backend.superBackend.openSection("section_energy_van_der_Waals")
             #self.metaStorage.update(updateDictVDW)
-            #self.metaStorage.updateBackend(backend.superBackend, 
+            #self.metaStorage.updateBackend(backend.superBackend,
             #        startsection=['section_energy_van_der_Waals'],
             #        autoopenclose=False)
             #backend.superBackend.closeSection("section_energy_van_der_Waals", self.secVDWGIndex)
@@ -923,7 +922,7 @@ class TINKERParser(SmartParser.ParserBase):
                 'dictionary' : section_singlecalc_Dict
                 }
             self.metaStorage.update(updateDict)
-            self.metaStorage.updateBackend(backend.superBackend, 
+            self.metaStorage.updateBackend(backend.superBackend,
                     startsection=['section_single_configuration_calculation'],
                     autoopenclose=False)
         if self.MDcurrentstep in forcesteps:
@@ -935,7 +934,7 @@ class TINKERParser(SmartParser.ParserBase):
                     self.metaStorage.convertUnits(
                         self.atompositions.velocities, "kilo-joule/(mol*nano-meter)", self.unitDict))))
                 # need to transpose array since its shape is [number_of_atoms,3] in the metadata
-        if(self.MDcurrentstep in trajsteps or 
+        if(self.MDcurrentstep in trajsteps or
            self.MDcurrentstep in velsteps):
             trajfile = None
             if 'filetrajs' in self.fileUnitDict[self.secRunGIndex]:
@@ -943,7 +942,7 @@ class TINKERParser(SmartParser.ParserBase):
                 if self.MDcurrentstep in filetrajs:
                     trajfile = filetrajs[self.MDcurrentstep]
             if trajfile is not None:
-                rtn = setMetaStrInDict(self, 'filecntrlDict', 'archive file', trajfile) 
+                rtn = setMetaStrInDict(self, 'filecntrlDict', 'archive file', trajfile)
                 self.tinker_input_output_files(backend, gIndex, section, "traj")
 
             self.onOpen_section_system(backend, None, None)
@@ -951,26 +950,26 @@ class TINKERParser(SmartParser.ParserBase):
             backend.addValue('single_configuration_calculation_to_system_ref', self.secSystemGIndex)
             self.MDiter += 1
         else:
-            if(self.MDcurrentstep in logsteps or 
+            if(self.MDcurrentstep in logsteps or
                self.MDcurrentstep in forcesteps):
                 self.MDiter += 1
-            if(self.inputcoords is not None and 
+            if(self.inputcoords is not None and
                self.MDcurrentstep == steps[0] and
                self.inputpositions is not None):
                 self.onOpen_section_system(backend, None, None)
                 self.onClose_section_system(backend, None, None)
                 backend.addValue('single_configuration_calculation_to_system_ref', self.secSystemGIndex)
                 self.MDiter += 1
-            if(self.outputcoords is not None and 
+            if(self.outputcoords is not None and
                self.MDcurrentstep == steps[-1] and
                self.outputpositions is not None):
                 self.onOpen_section_system(backend, None, None)
                 self.onClose_section_system(backend, None, None)
                 backend.addValue('single_configuration_calculation_to_system_ref', self.secSystemGIndex)
                 self.MDiter += 1
-            #if((self.MDcurrentstep in logsteps and 
-            #    self.MDiter+1 in steps) or 
-            #    (self.MDcurrentstep in forcesteps and 
+            #if((self.MDcurrentstep in logsteps and
+            #    self.MDiter+1 in steps) or
+            #    (self.MDcurrentstep in forcesteps and
             #    self.MDiter+1 in steps)):
             #    self.MDiter += 1
         #if self.MDiter<len(steps):
@@ -995,7 +994,7 @@ class TINKERParser(SmartParser.ParserBase):
 
     def fileNameTrans(self, fname, value):
         return value
-    
+
     def mdInfoTrans(self, fname, value):
         mdInfoDict = {
                 "minimization" : [],
@@ -1052,7 +1051,7 @@ class TINKERParser(SmartParser.ParserBase):
                 else:
                     return value
         return value
-    
+
     def trueToZero(self, fname, value):
         keyMapper = {
                 "Molecular Dynamics" : "MDmainstep",
@@ -1167,7 +1166,7 @@ class TINKERParser(SmartParser.ParserBase):
                     if self.matchStrInTextFile(parser,fName,reStr):
                         includedList.append(fName)
         else:
-            includedList = fileList 
+            includedList = fileList
         # If and exclude list is given,
         # remove the files from list that
         # includes these Regular expression matches
@@ -1177,7 +1176,7 @@ class TINKERParser(SmartParser.ParserBase):
                     if not self.matchStrInTextFile(parser,fName,reStr):
                         excludedList.append(fName)
         else:
-            excludedList = includedList 
+            excludedList = includedList
         return excludedList
 
     def storeTextFile(self, parser, textDict, storeName, textFile):
@@ -1209,7 +1208,7 @@ class TINKERParser(SmartParser.ParserBase):
         except ValueError:
             prm = None
         return prm
- 
+
     def readTinkerParameterFile(self, parser, fileName, cntrlDict):
         success = False
         emptyLine = re.compile(r"^\s*$")
@@ -1465,7 +1464,7 @@ class TINKERParser(SmartParser.ParserBase):
                             for filename in fnmatch.filter(filenames, findfile):
                                 matches.append(os.path.join(root, filename))
                                 break
- 
+
             inputFile = None
             if matches:
                 inputFile = matches[0]
@@ -1480,8 +1479,8 @@ class TINKERParser(SmartParser.ParserBase):
         working_dir_name = os.path.dirname(os.path.abspath(self.fName))
         addfile = os.path.normpath(working_dir_name+os.path.sep+arcname)
         for fname in self.tinkerFiles:
-            if('.arc' not in fname and 
-               '.xyz' not in fname and 
+            if('.arc' not in fname and
+               '.xyz' not in fname and
                fname in fileListInDir):
                 xyzSeqList.append(working_dir_name+os.path.sep+fname)
         anyFileExist=False
@@ -1628,7 +1627,7 @@ class TINKERParser(SmartParser.ParserBase):
         # First find tinker run name from output files such as Coordinate File outputs
         # If there is no output file than
         # find all .key files in working dir
-        # and try match the base names of these files with the output log file that 
+        # and try match the base names of these files with the output log file that
         # parser is working on.
         # If none of the above strategies work, use default key file name tinker.key
         # Finally, try readinf input key file if there is one
@@ -1669,7 +1668,7 @@ class TINKERParser(SmartParser.ParserBase):
 
         self.tinkerTrajSteps = []
         if fileFound is True:
-            rtn = setMetaStrInDict(self, 'filecntrlDict', 'coordinate file list', ','.join(self.tinkerFiles)) 
+            rtn = setMetaStrInDict(self, 'filecntrlDict', 'coordinate file list', ','.join(self.tinkerFiles))
             self.tinkerRunFiles.update({'coordinate file list' : ','.join(self.tinkerFiles)})
         if self.secRunGIndex<1:
             xyzfile = self.tinkerBaseName + '.xyz'
@@ -1680,7 +1679,7 @@ class TINKERParser(SmartParser.ParserBase):
         corfile = self.tinkerBaseName + '.001'
         arcfile = self.tinkerBaseName + '.arc'
         if xyzfile in filesListInDir:
-            rtn = setMetaStrInDict(self, 'filecntrlDict', 'topology file', xyzfile) 
+            rtn = setMetaStrInDict(self, 'filecntrlDict', 'topology file', xyzfile)
             self.tinkerRunFiles.update({'topology file' : xyzfile})
             self.tinkerTrajSteps.append(1)
             if self.tinkerFirstStep not in self.tinkerTrajSteps:
@@ -1690,32 +1689,32 @@ class TINKERParser(SmartParser.ParserBase):
                 if trajst not in self.tinkerTrajSteps:
                     self.tinkerTrajSteps.append(trajst)
         if outxyzfile in filesListInDir:
-            rtn = setMetaStrInDict(self, 'filecntrlDict', 'final configuration file', outxyzfile) 
+            rtn = setMetaStrInDict(self, 'filecntrlDict', 'final configuration file', outxyzfile)
             self.tinkerRunFiles.update({'final configuration file' : outxyzfile})
             if self.MDsteps not in self.tinkerTrajSteps:
                 self.tinkerTrajSteps.append(self.MDsteps)
         if xyzfile in filesListInDir:
-            rtn = setMetaStrInDict(self, 'filecntrlDict', 'initial configuration file', xyzfile) 
+            rtn = setMetaStrInDict(self, 'filecntrlDict', 'initial configuration file', xyzfile)
             self.tinkerRunFiles.update({'initial configuration file' : xyzfile})
         if self.tinkerRunMD is True:
             if dynfile in filesListInDir:
-                rtn = setMetaStrInDict(self, 'filecntrlDict', 'restart file', dynfile) 
+                rtn = setMetaStrInDict(self, 'filecntrlDict', 'restart file', dynfile)
                 self.tinkerRunFiles.update({'restart file' : dynfile})
                 if self.MDsteps not in self.tinkerTrajSteps:
                     self.tinkerTrajSteps.append(self.MDsteps)
             if corfile in filesListInDir:
-                rtn = setMetaStrInDict(self, 'filecntrlDict', 'initial trajectory file', corfile) 
+                rtn = setMetaStrInDict(self, 'filecntrlDict', 'initial trajectory file', corfile)
                 self.tinkerRunFiles.update({'initial trajectory file' : corfile})
             if arcfile in filesListInDir and arcfile in self.tinkerFiles:
-                rtn = setMetaStrInDict(self, 'filecntrlDict', 'archive file', arcfile) 
+                rtn = setMetaStrInDict(self, 'filecntrlDict', 'archive file', arcfile)
                 self.tinkerRunFiles.update({'archive file' : arcfile})
 
         self.tinkerXYZSeqList = {}
         if arcfile not in self.tinkerFiles:
             trajinstance = 0
             for fname in self.tinkerFiles:
-                if('.arc' not in fname and 
-                   '.xyz' not in fname and 
+                if('.arc' not in fname and
+                   '.xyz' not in fname and
                    fname in filesListInDir):
                     self.tinkerXYZSeqList.update({
                         self.tinkerFileSteps[
@@ -1723,12 +1722,12 @@ class TINKERParser(SmartParser.ParserBase):
                         })
                     trajinstance += 1
         #    self.generateARCfileFromSequenceFiles(parser, filesListInDir, arcfile)
-        #    rtn = setMetaStrInDict(self, 'filecntrlDict', 'archive file', arcfile) 
+        #    rtn = setMetaStrInDict(self, 'filecntrlDict', 'archive file', arcfile)
         #    self.tinkerRunFiles.update({'archive file' : arcfile})
 
-        
+
         if self.tinkerKeyFile is not None:
-            rtn = setMetaStrInDict(self, 'filecntrlDict', 'key file', self.tinkerKeyFile) 
+            rtn = setMetaStrInDict(self, 'filecntrlDict', 'key file', self.tinkerKeyFile)
             self.findInputCmdFileAndRead(parser)
         return success
 
@@ -1780,7 +1779,7 @@ class TINKERParser(SmartParser.ParserBase):
                             for filename in fnmatch.filter(filenames, findfile):
                                 matches.append(os.path.join(root, filename))
                                 break
- 
+
             inputFile = None
             if matches:
                 inputFile = matches[0]
@@ -1795,8 +1794,8 @@ class TINKERParser(SmartParser.ParserBase):
         working_dir_name = os.path.dirname(os.path.abspath(self.fName))
         addfile = os.path.normpath(working_dir_name+os.path.sep+arcname)
         for fname in self.tinkerFiles:
-            if('.arc' not in fname and 
-               '.xyz' not in fname and 
+            if('.arc' not in fname and
+               '.xyz' not in fname and
                fname in fileListInDir):
                 xyzSeqList.append(working_dir_name+os.path.sep+fname)
         anyFileExist=False
@@ -1943,7 +1942,7 @@ class TINKERParser(SmartParser.ParserBase):
         # First find tinker run name from output files such as Coordinate File outputs
         # If there is no output file than
         # find all .key files in working dir
-        # and try match the base names of these files with the output log file that 
+        # and try match the base names of these files with the output log file that
         # parser is working on.
         # If none of the above strategies work, use default key file name tinker.key
         # Finally, try readinf input key file if there is one
@@ -1984,7 +1983,7 @@ class TINKERParser(SmartParser.ParserBase):
 
         self.tinkerTrajSteps = []
         if fileFound is True:
-            rtn = setMetaStrInDict(self, 'filecntrlDict', 'coordinate file list', ','.join(self.tinkerFiles)) 
+            rtn = setMetaStrInDict(self, 'filecntrlDict', 'coordinate file list', ','.join(self.tinkerFiles))
             self.tinkerRunFiles.update({'coordinate file list' : ','.join(self.tinkerFiles)})
         if self.secRunGIndex<1:
             xyzfile = self.tinkerBaseName + '.xyz'
@@ -1995,7 +1994,7 @@ class TINKERParser(SmartParser.ParserBase):
         corfile = self.tinkerBaseName + '.001'
         arcfile = self.tinkerBaseName + '.arc'
         if xyzfile in filesListInDir:
-            rtn = setMetaStrInDict(self, 'filecntrlDict', 'topology file', xyzfile) 
+            rtn = setMetaStrInDict(self, 'filecntrlDict', 'topology file', xyzfile)
             self.tinkerRunFiles.update({'topology file' : xyzfile})
             self.tinkerTrajSteps.append(1)
             if self.tinkerFirstStep not in self.tinkerTrajSteps:
@@ -2005,32 +2004,32 @@ class TINKERParser(SmartParser.ParserBase):
                 if trajst not in self.tinkerTrajSteps:
                     self.tinkerTrajSteps.append(trajst)
         if outxyzfile in filesListInDir:
-            rtn = setMetaStrInDict(self, 'filecntrlDict', 'final configuration file', outxyzfile) 
+            rtn = setMetaStrInDict(self, 'filecntrlDict', 'final configuration file', outxyzfile)
             self.tinkerRunFiles.update({'final configuration file' : outxyzfile})
             if self.MDsteps not in self.tinkerTrajSteps:
                 self.tinkerTrajSteps.append(self.MDsteps)
         if xyzfile in filesListInDir:
-            rtn = setMetaStrInDict(self, 'filecntrlDict', 'initial configuration file', xyzfile) 
+            rtn = setMetaStrInDict(self, 'filecntrlDict', 'initial configuration file', xyzfile)
             self.tinkerRunFiles.update({'initial configuration file' : xyzfile})
         if self.tinkerRunMD is True:
             if dynfile in filesListInDir:
-                rtn = setMetaStrInDict(self, 'filecntrlDict', 'restart file', dynfile) 
+                rtn = setMetaStrInDict(self, 'filecntrlDict', 'restart file', dynfile)
                 self.tinkerRunFiles.update({'restart file' : dynfile})
                 if self.MDsteps not in self.tinkerTrajSteps:
                     self.tinkerTrajSteps.append(self.MDsteps)
             if corfile in filesListInDir:
-                rtn = setMetaStrInDict(self, 'filecntrlDict', 'initial trajectory file', corfile) 
+                rtn = setMetaStrInDict(self, 'filecntrlDict', 'initial trajectory file', corfile)
                 self.tinkerRunFiles.update({'initial trajectory file' : corfile})
             if arcfile in filesListInDir and arcfile in self.tinkerFiles:
-                rtn = setMetaStrInDict(self, 'filecntrlDict', 'archive file', arcfile) 
+                rtn = setMetaStrInDict(self, 'filecntrlDict', 'archive file', arcfile)
                 self.tinkerRunFiles.update({'archive file' : arcfile})
 
         self.tinkerXYZSeqList = {}
         if arcfile not in self.tinkerFiles:
             trajinstance = 0
             for fname in self.tinkerFiles:
-                if('.arc' not in fname and 
-                   '.xyz' not in fname and 
+                if('.arc' not in fname and
+                   '.xyz' not in fname and
                    fname in filesListInDir):
                     self.tinkerXYZSeqList.update({
                         self.tinkerFileSteps[
@@ -2038,12 +2037,12 @@ class TINKERParser(SmartParser.ParserBase):
                         })
                     trajinstance += 1
         #    self.generateARCfileFromSequenceFiles(parser, filesListInDir, arcfile)
-        #    rtn = setMetaStrInDict(self, 'filecntrlDict', 'archive file', arcfile) 
+        #    rtn = setMetaStrInDict(self, 'filecntrlDict', 'archive file', arcfile)
         #    self.tinkerRunFiles.update({'archive file' : arcfile})
 
-        
+
         if self.tinkerKeyFile is not None:
-            rtn = setMetaStrInDict(self, 'filecntrlDict', 'key file', self.tinkerKeyFile) 
+            rtn = setMetaStrInDict(self, 'filecntrlDict', 'key file', self.tinkerKeyFile)
             #self.findInputCmdFileAndRead(parser)
 
         self.tinkerRunFiles.update({'filesteps' : self.tinkerTrajSteps})
@@ -2073,7 +2072,7 @@ class TINKERParser(SmartParser.ParserBase):
                 'E Kinetic':3,
                 'Temp':4,
                 'Pres':5,
-                } 
+                }
 
         #self.minStepHeaderDict={
         #        'MIN Iter' : 0,
@@ -2084,7 +2083,7 @@ class TINKERParser(SmartParser.ParserBase):
         #        'Angle' : 5,
         #        'FG Call' : 6,
         #        'Comment' : 7
-        #        } 
+        #        }
 
         cntrlNameList=getList_MetaStrInDict(self.metaDicts['cntrl'])
         filecntrlNameList=getList_MetaStrInDict(self.metaDicts['filecntrl'])
@@ -2099,7 +2098,7 @@ class TINKERParser(SmartParser.ParserBase):
               "waitlist"          : None,
               "stopOnMatchStr"    : r"\s*(?:QN|TN|CG|VM)\s+Iter\s*",
               "quitOnMatchStr"    : r"\s*(?:QN|TN|CG|VM)\s+Iter\s*",
-              "metaNameStart"     : PARSERTAG + "_inout_control", 
+              "metaNameStart"     : PARSERTAG + "_inout_control",
               "matchNameList"     : cntrlNameList,
               "matchNameDict"     : "mdcntrlDict",
               "updateMatchDict"   : True,
@@ -2107,8 +2106,8 @@ class TINKERParser(SmartParser.ParserBase):
               "stopOnFirstLine"   : False,
               "parserOptions"     : {
                   "lineFilter"       : None,
-                  "controlsections"  : ["x_tinker_section_control_parameters"], 
-                  "controlsave"      : "sectioncontrol", 
+                  "controlsections"  : ["x_tinker_section_control_parameters"],
+                  "controlsave"      : "sectioncontrol",
                   "controldict"      : "stepcontrolDict",
                   }
               },
@@ -2119,7 +2118,7 @@ class TINKERParser(SmartParser.ParserBase):
               "waitlist"          : None,
               "stopOnMatchStr"    : r"^\s*$",
               "quitOnMatchStr"    : r"^\s*$",
-              "metaNameStart"     : PARSERTAG + "_inout_control", 
+              "metaNameStart"     : PARSERTAG + "_inout_control",
               "matchNameList"     : cntrlNameList,
               "matchNameDict"     : "mdcntrlDict",
               "updateMatchDict"   : True,
@@ -2127,8 +2126,8 @@ class TINKERParser(SmartParser.ParserBase):
               "stopOnFirstLine"   : True,
               "parserOptions"     : {
                   "lineFilter"       : None,
-                  #"controlsections"  : ["x_tinker_section_control_parameters"], 
-                  #"controlsave"      : "sectioncontrol", 
+                  #"controlsections"  : ["x_tinker_section_control_parameters"],
+                  #"controlsave"      : "sectioncontrol",
                   #"controldict"      : "stepcontrolDict",
                   }
               },
@@ -2139,7 +2138,7 @@ class TINKERParser(SmartParser.ParserBase):
               "waitlist"          : None,
               "stopOnMatchStr"    : r"^\s*$",
               "quitOnMatchStr"    : r"^\s*$",
-              "metaNameStart"     : PARSERTAG + "_inout_control", 
+              "metaNameStart"     : PARSERTAG + "_inout_control",
               "matchNameList"     : cntrlNameList,
               "matchNameDict"     : "mdcntrlDict",
               "updateMatchDict"   : True,
@@ -2147,8 +2146,8 @@ class TINKERParser(SmartParser.ParserBase):
               "stopOnFirstLine"   : False,
               "parserOptions"     : {
                   "lineFilter"       : None,
-                  #"controlsections"  : ["x_tinker_section_control_parameters"], 
-                  #"controlsave"      : "sectioncontrol", 
+                  #"controlsections"  : ["x_tinker_section_control_parameters"],
+                  #"controlsave"      : "sectioncontrol",
                   #"controldict"      : "stepcontrolDict",
                   }
               },
@@ -2165,16 +2164,16 @@ class TINKERParser(SmartParser.ParserBase):
               "updateMatchDict"   : False,
               "onlyCaseSensitive" : False,
               "stopOnFirstLine"   : False,
-              "parserOptions"     : { 
-                  "sectionname"      : "x_tinker_section_control_parameters", 
-                  "sectionopen"      : True, 
-                  "sectionopenattr"  : "MDcurrentstep", 
-                  "sectionopenin"    : "cntrlparmstep", 
-                  "sectionclose"     : True, 
-                  "sectioncloseattr" : "MDcurrentstep", 
-                  "sectionclosein"   : "cntrlparmstep", 
-                  "activatesection"  : "sectioncontrol", 
-                  "lookupdict"       : "stepcontrolDict" 
+              "parserOptions"     : {
+                  "sectionname"      : "x_tinker_section_control_parameters",
+                  "sectionopen"      : True,
+                  "sectionopenattr"  : "MDcurrentstep",
+                  "sectionopenin"    : "cntrlparmstep",
+                  "sectionclose"     : True,
+                  "sectioncloseattr" : "MDcurrentstep",
+                  "sectionclosein"   : "cntrlparmstep",
+                  "activatesection"  : "sectioncontrol",
+                  "lookupdict"       : "stepcontrolDict"
                   }
               },
             # Optimization Step header reader
@@ -2185,18 +2184,18 @@ class TINKERParser(SmartParser.ParserBase):
               #"waitlist"          : [["min_init_parser"]],
               "stopOnMatchStr"    : r"^\s*$",
               "quitOnMatchStr"    : r"^\s*$",
-              "metaNameStart"     : PARSERTAG + "_mdout_", 
+              "metaNameStart"     : PARSERTAG + "_mdout_",
               "matchNameList"     : mddataNameList,
               "matchNameDict"     : "mddataDict",
               "updateMatchDict"   : True,
               "onlyCaseSensitive" : False,
               "stopOnFirstLine"   : False,
-              "parserOptions"     : { 
-                  "header"           : True, 
-                  "headersave"       : "minStepHeaderDict", 
-                  "wrap"             : False, 
-                  "tablelines"       : 0, 
-                  "tablestartsat"    : r"\s*(?:QN|TN|CG|VM)\s*Iter", 
+              "parserOptions"     : {
+                  "header"           : True,
+                  "headersave"       : "minStepHeaderDict",
+                  "wrap"             : False,
+                  "tablelines"       : 0,
+                  "tablestartsat"    : r"\s*(?:QN|TN|CG|VM)\s*Iter",
                   "tableendsat"      : r"^\s*$",
                   "lineFilter"       : {
                       'QN Iter' : 'ITER1',
@@ -2206,14 +2205,14 @@ class TINKERParser(SmartParser.ParserBase):
                       'F Value' : 'FVALUE',
                       'G RMS'   : 'GRMS1',
                       'RMS G'   : 'GRMS2',
-                      'F Move'  : 'FMove', 
-                      'X Move'  : 'XMove',    
+                      'F Move'  : 'FMove',
+                      'X Move'  : 'XMove',
                       'FG Call' : 'FGCall'
                       },
                   "movetostopline"   : True,
                   #"parsercntrlattr"  : "MDcurrentstep",
                   #"parsercntrlin"    : "steps",
-                  #"lookupdict"       : "stepcontrolDict" 
+                  #"lookupdict"       : "stepcontrolDict"
                   }
               },
             # Optim output cycles reader
@@ -2230,28 +2229,28 @@ class TINKERParser(SmartParser.ParserBase):
               #"quitOnMatchStr"    : r"\s*(?:MD\s*Step|"
               #                       "Average\s*Values|"
               #                       "Instantaneous\s*Values)\s*",
-              "metaNameStart"     : PARSERTAG + "_mdout_", 
+              "metaNameStart"     : PARSERTAG + "_mdout_",
               "matchNameList"     : mddataNameList,
               "matchNameDict"     : "mddataDict",
               "updateMatchDict"   : True,
               "onlyCaseSensitive" : False,
               "stopOnFirstLine"   : True,
-              "parserOptions"     : { 
-                  "header"           : False, 
-                  "headerList"       : "minStepHeaderDict", 
-                  "wrap"             : False, 
-                  "tablelines"       : 0, 
-                  "maxtablelines"    : 1, 
-                  "tablestartsat"    : r"\s*[0-9]+\s*", 
+              "parserOptions"     : {
+                  "header"           : False,
+                  "headerList"       : "minStepHeaderDict",
+                  "wrap"             : False,
+                  "tablelines"       : 0,
+                  "maxtablelines"    : 1,
+                  "tablestartsat"    : r"\s*[0-9]+\s*",
                   "tableendsat"      : r"^\s*$",
                   "lineFilter"       : None,
                   "movetostopline"   : True,
-                  "controlsections"  : ["section_single_configuration_calculation"], 
-                  "controlsave"      : "sectioncontrol", 
+                  "controlsections"  : ["section_single_configuration_calculation"],
+                  "controlsave"      : "sectioncontrol",
                   "controldict"      : "stepcontrolDict",
                   #"parsercntrlattr"  : "MDcurrentstep",
                   #"parsercntrlin"    : "logsteps",
-                  #"lookupdict"       : "stepcontrolDict" 
+                  #"lookupdict"       : "stepcontrolDict"
                   }
               },
             # energy save Parser
@@ -2262,22 +2261,22 @@ class TINKERParser(SmartParser.ParserBase):
               #"waitlist"          : [["md_step_parser"]],
               "stopOnMatchStr"    : "AlwaysStop",
               "quitOnMatchStr"    : "AlwaysStop",
-              "metaNameStart"     : PARSERTAG + "_mdout_", 
+              "metaNameStart"     : PARSERTAG + "_mdout_",
               "matchNameList"     : mddataNameList,
               "matchNameDict"     : "mddataDict",
               "updateMatchDict"   : False,
               "onlyCaseSensitive" : False,
               "stopOnFirstLine"   : False,
-              "parserOptions"     : { 
-                  "dictionary"       : "mddataDict", 
+              "parserOptions"     : {
+                  "dictionary"       : "mddataDict",
                   "dicttype"         : "smartparser", # (standard or smartparser)
-                  "readwritedict"    : "write", 
+                  "readwritedict"    : "write",
                   "keyMapper"        : {"F Value" : "E Potential"},
                   #"preprocess"       : self.convertFloat,
                   #"postprocess"      : self.convertFloat,
                   #"parsercntrlattr"  : "MDcurrentstep",
                   #"parsercntrlin"    : "steps",
-                  #"lookupdict"       : "stepcontrolDict" 
+                  #"lookupdict"       : "stepcontrolDict"
                   }
               },
             # thermostat save Parser
@@ -2288,16 +2287,16 @@ class TINKERParser(SmartParser.ParserBase):
               #"waitlist"          : [["md_step_parser"]],
               "stopOnMatchStr"    : "AlwaysStop",
               "quitOnMatchStr"    : "AlwaysStop",
-              "metaNameStart"     : PARSERTAG + "_mdout_", 
+              "metaNameStart"     : PARSERTAG + "_mdout_",
               "matchNameList"     : mddataNameList,
               "matchNameDict"     : "mddataDict",
               "updateMatchDict"   : False,
               "onlyCaseSensitive" : False,
               "stopOnFirstLine"   : False,
-              "parserOptions"     : { 
-                  "dictionary"       : "stepcontrolDict", 
+              "parserOptions"     : {
+                  "dictionary"       : "stepcontrolDict",
                   "dicttype"         : "standard", # (standard or smartparser)
-                  "readwritedict"    : "write", 
+                  "readwritedict"    : "write",
                   "keyMapper"        : {"MD Step"         : "MDcurrentstep",
                                         "Dynamics Steps"  : "MDcurrentstep",
                                         #"InputCoordStep"  : "MDcurrentstep",
@@ -2308,15 +2307,15 @@ class TINKERParser(SmartParser.ParserBase):
                                         "CG Iter"         : "MDcurrentstep"},
                   "updatefunc"       : "max",
                   "updateattrs"      : ["MDcurrentstep"],
-                  "controlsections"  : ["section_single_configuration_calculation"], 
-                  "controlsave"      : "sectioncontrol", 
+                  "controlsections"  : ["section_single_configuration_calculation"],
+                  "controlsave"      : "sectioncontrol",
                   "controldict"      : "stepcontrolDict",
                   "controlattrs"     : ["MDcurrentstep"],
                   "preprocess"       : self.convertInt,
                   "postprocess"      : self.convertInt,
                   #"parsercntrlattr"  : "MDcurrentstep",
                   #"parsercntrlin"    : "steps",
-                  #"lookupdict"       : "stepcontrolDict" 
+                  #"lookupdict"       : "stepcontrolDict"
                   }
               },
             # Section Control Parser
@@ -2333,16 +2332,16 @@ class TINKERParser(SmartParser.ParserBase):
               "updateMatchDict"   : False,
               "onlyCaseSensitive" : True,
               "stopOnFirstLine"   : False,
-              "parserOptions"     : { 
-                  "sectionname"      : "section_single_configuration_calculation", 
-                  "sectionopen"      : True, 
-                  "sectionopenattr"  : "MDcurrentstep", 
-                  "sectionopenin"    : "steps", 
-                  "sectionclose"     : True, 
-                  "sectioncloseattr" : "MDcurrentstep", 
-                  "sectionclosein"   : "steps", 
-                  "activatesection"  : "sectioncontrol", 
-                  "lookupdict"       : "stepcontrolDict" 
+              "parserOptions"     : {
+                  "sectionname"      : "section_single_configuration_calculation",
+                  "sectionopen"      : True,
+                  "sectionopenattr"  : "MDcurrentstep",
+                  "sectionopenin"    : "steps",
+                  "sectionclose"     : True,
+                  "sectioncloseattr" : "MDcurrentstep",
+                  "sectionclosein"   : "steps",
+                  "activatesection"  : "sectioncontrol",
+                  "lookupdict"       : "stepcontrolDict"
                   }
               },
             # Readline Control Parser
@@ -2360,18 +2359,18 @@ class TINKERParser(SmartParser.ParserBase):
               "updateMatchDict"   : False,
               "onlyCaseSensitive" : True,
               "stopOnFirstLine"   : False,
-              "parserOptions"     : { 
-                  "peeklineFirst"    : False, 
+              "parserOptions"     : {
+                  "peeklineFirst"    : False,
                   "waitatlineStr"    : r"^\s*",
-                  "controlwait"      : None, 
-                  "controlattr"      : "MDcurrentstep", 
-                  #"controlnextattr"  : "MDnextstep", 
-                  #"controllast"      : -1, 
-                  #"controlskip"      : [0], 
-                  "controlin"        : "steps", 
-                  "controlcounter"   : "targetstep", 
+                  "controlwait"      : None,
+                  "controlattr"      : "MDcurrentstep",
+                  #"controlnextattr"  : "MDnextstep",
+                  #"controllast"      : -1,
+                  #"controlskip"      : [0],
+                  "controlin"        : "steps",
+                  "controlcounter"   : "targetstep",
                   "controldict"      : "stepcontrolDict",
-                  "lookupdict"       : "stepcontrolDict" 
+                  "lookupdict"       : "stepcontrolDict"
                   }
               },
             ]
@@ -2388,7 +2387,7 @@ class TINKERParser(SmartParser.ParserBase):
               "quitOnMatchStr"    : r"\s*(?:MD\s+Step|"
                                      "Average\s+Values|"
                                      "Instantaneous\s+Values)\s*",
-              "metaNameStart"     : PARSERTAG + "_inout_control", 
+              "metaNameStart"     : PARSERTAG + "_inout_control",
               "matchNameList"     : cntrlNameList,
               "matchNameDict"     : "mdcntrlDict",
               "updateMatchDict"   : False,
@@ -2397,8 +2396,8 @@ class TINKERParser(SmartParser.ParserBase):
               "parserOptions"     : {
                   #"lineFilter"       : None,
                   #"movetostopline"   : True,
-                  "controlsections"  : ["x_tinker_section_control_parameters"], 
-                  "controlsave"      : "sectioncontrol", 
+                  "controlsections"  : ["x_tinker_section_control_parameters"],
+                  "controlsave"      : "sectioncontrol",
                   "controldict"      : "stepcontrolDict",
                   }
               },
@@ -2415,16 +2414,16 @@ class TINKERParser(SmartParser.ParserBase):
               "updateMatchDict"   : False,
               "onlyCaseSensitive" : False,
               "stopOnFirstLine"   : False,
-              "parserOptions"     : { 
-                  "sectionname"      : "x_tinker_section_control_parameters", 
-                  "sectionopen"      : True, 
-                  "sectionopenattr"  : "MDcurrentstep", 
-                  "sectionopenin"    : "cntrlparmstep", 
-                  "sectionclose"     : True, 
-                  "sectioncloseattr" : "MDcurrentstep", 
-                  "sectionclosein"   : "cntrlparmstep", 
-                  "activatesection"  : "sectioncontrol", 
-                  "lookupdict"       : "stepcontrolDict" 
+              "parserOptions"     : {
+                  "sectionname"      : "x_tinker_section_control_parameters",
+                  "sectionopen"      : True,
+                  "sectionopenattr"  : "MDcurrentstep",
+                  "sectionopenin"    : "cntrlparmstep",
+                  "sectionclose"     : True,
+                  "sectioncloseattr" : "MDcurrentstep",
+                  "sectionclosein"   : "cntrlparmstep",
+                  "activatesection"  : "sectioncontrol",
+                  "lookupdict"       : "stepcontrolDict"
                   }
               },
             # MD output average values reader
@@ -2434,7 +2433,7 @@ class TINKERParser(SmartParser.ParserBase):
               "waitlist"          : None,
               "stopOnMatchStr"    : r"^\s*Density\s*",
               "quitOnMatchStr"    : r"^\s*Density\s*",
-              "metaNameStart"     : PARSERTAG + "_mdout_", 
+              "metaNameStart"     : PARSERTAG + "_mdout_",
               "matchNameList"     : mddataNameList,
               "matchNameDict"     : "mddataDict",
               "updateMatchDict"   : True,
@@ -2443,8 +2442,8 @@ class TINKERParser(SmartParser.ParserBase):
               "parserOptions"     : {
                   #"lineFilter"       : None,
                   "movetostopline"   : True,
-                  #"controlsections"  : ["section_single_configuration_calculation"], 
-                  #"controlsave"      : "sectioncontrol", 
+                  #"controlsections"  : ["section_single_configuration_calculation"],
+                  #"controlsave"      : "sectioncontrol",
                   #"controldict"      : "stepcontrolDict",
                   }
               },
@@ -2455,7 +2454,7 @@ class TINKERParser(SmartParser.ParserBase):
               "waitlist"          : None,
               "stopOnMatchStr"    : r"^\s*Coordinate\s*File\s*",
               "quitOnMatchStr"    : r"^\s*Coordinate\s*File\s*",
-              "metaNameStart"     : PARSERTAG + "_mdout_", 
+              "metaNameStart"     : PARSERTAG + "_mdout_",
               "matchNameList"     : mddataNameList,
               "matchNameDict"     : "mddataDict",
               "updateMatchDict"   : True,
@@ -2463,8 +2462,8 @@ class TINKERParser(SmartParser.ParserBase):
               "stopOnFirstLine"   : False,
               "parserOptions"     : {
                   "movetostopline"   : True,
-                  #"controlsections"  : ["section_single_configuration_calculation"], 
-                  #"controlsave"      : "sectioncontrol", 
+                  #"controlsections"  : ["section_single_configuration_calculation"],
+                  #"controlsave"      : "sectioncontrol",
                   #"controldict"      : "stepcontrolDict",
                   }
               },
@@ -2475,7 +2474,7 @@ class TINKERParser(SmartParser.ParserBase):
               "waitlist"          : None,
               "stopOnMatchStr"    : r"^\s*$",
               "quitOnMatchStr"    : r"^\s*$",
-              "metaNameStart"     : PARSERTAG + "_mdout_", 
+              "metaNameStart"     : PARSERTAG + "_mdout_",
               "matchNameList"     : mddataNameList,
               "matchNameDict"     : "mddataDict",
               "updateMatchDict"   : True,
@@ -2483,8 +2482,8 @@ class TINKERParser(SmartParser.ParserBase):
               "stopOnFirstLine"   : False,
               "parserOptions"     : {
                   "movetostopline"   : True,
-                  #"controlsections"  : ["section_single_configuration_calculation"], 
-                  #"controlsave"      : "sectioncontrol", 
+                  #"controlsections"  : ["section_single_configuration_calculation"],
+                  #"controlsave"      : "sectioncontrol",
                   #"controldict"      : "stepcontrolDict",
                   }
               },
@@ -2497,16 +2496,16 @@ class TINKERParser(SmartParser.ParserBase):
                                      ["md_insta_parser"]],
               "stopOnMatchStr"    : "AlwaysStop",
               "quitOnMatchStr"    : "AlwaysStop",
-              "metaNameStart"     : PARSERTAG + "_mdout_", 
+              "metaNameStart"     : PARSERTAG + "_mdout_",
               "matchNameList"     : mddataNameList,
               "matchNameDict"     : "mddataDict",
               "updateMatchDict"   : False,
               "onlyCaseSensitive" : False,
               "stopOnFirstLine"   : False,
-              "parserOptions"     : { 
-                  "dictionary"       : "mddataDict", 
+              "parserOptions"     : {
+                  "dictionary"       : "mddataDict",
                   "dicttype"         : "smartparser", # (standard or smartparser)
-                  "readwritedict"    : "write", 
+                  "readwritedict"    : "write",
                   "keyMapper"        : {"Total Energy" : "E Total",
                                         "Potential Energy" : "E Potential",
                                         "Kinetic Energy" : "E Kinetic",
@@ -2516,7 +2515,7 @@ class TINKERParser(SmartParser.ParserBase):
                   #"postprocess"      : self.convertFloat,
                   #"parsercntrlattr"  : "MDcurrentstep",
                   #"parsercntrlin"    : "steps",
-                  #"lookupdict"       : "stepcontrolDict" 
+                  #"lookupdict"       : "stepcontrolDict"
                   }
               },
             # MD STEP header reader
@@ -2526,31 +2525,31 @@ class TINKERParser(SmartParser.ParserBase):
               "waitlist"          : None,
               "stopOnMatchStr"    : r"^\s*$",
               "quitOnMatchStr"    : r"^\s*$",
-              "metaNameStart"     : PARSERTAG + "_mdout_", 
+              "metaNameStart"     : PARSERTAG + "_mdout_",
               "matchNameList"     : mddataNameList,
               "matchNameDict"     : "mddataDict",
               "updateMatchDict"   : True,
               "onlyCaseSensitive" : False,
               "stopOnFirstLine"   : False,
-              "parserOptions"     : { 
-                  "header"           : True, 
-                  "headersave"       : "mdStepHeaderDict", 
-                  "wrap"             : False, 
-                  "tablelines"       : 0, 
-                  "tablestartsat"    : r"\s*MD\s*Step", 
+              "parserOptions"     : {
+                  "header"           : True,
+                  "headersave"       : "mdStepHeaderDict",
+                  "wrap"             : False,
+                  "tablelines"       : 0,
+                  "tablestartsat"    : r"\s*MD\s*Step",
                   "tableendsat"      : r"^\s*$",
                   "lineFilter"       : {
                       'MD Step': 'MD-Step',
                       'E Total': 'TOTAL',
                       'E Potential': 'POTENTIAL',
-                      'E Kinetic': 'KINETIC', 
-                      'Temp': 'TEMP',    
+                      'E Kinetic': 'KINETIC',
+                      'Temp': 'TEMP',
                       'Pres': 'PRESS'
                       },
                   "movetostopline"   : True,
                   #"parsercntrlattr"  : "MDcurrentstep",
                   #"parsercntrlin"    : "steps",
-                  #"lookupdict"       : "stepcontrolDict" 
+                  #"lookupdict"       : "stepcontrolDict"
                   }
               },
             # MD output cycles reader
@@ -2565,28 +2564,28 @@ class TINKERParser(SmartParser.ParserBase):
               "quitOnMatchStr"    : r"\s*(?:MD\s*Step|"
                                      "Average\s*Values|"
                                      "Instantaneous\s*Values)\s*",
-              "metaNameStart"     : PARSERTAG + "_mdout_", 
+              "metaNameStart"     : PARSERTAG + "_mdout_",
               "matchNameList"     : mddataNameList,
               "matchNameDict"     : "mddataDict",
               "updateMatchDict"   : True,
               "onlyCaseSensitive" : False,
               "stopOnFirstLine"   : True,
-              "parserOptions"     : { 
-                  "header"           : False, 
-                  "headerList"       : "mdStepHeaderDict", 
-                  "wrap"             : False, 
-                  "tablelines"       : 0, 
-                  "maxtablelines"    : 1, 
-                  "tablestartsat"    : r"\s*[0-9]+\s*", 
+              "parserOptions"     : {
+                  "header"           : False,
+                  "headerList"       : "mdStepHeaderDict",
+                  "wrap"             : False,
+                  "tablelines"       : 0,
+                  "maxtablelines"    : 1,
+                  "tablestartsat"    : r"\s*[0-9]+\s*",
                   "tableendsat"      : r"^\s*$",
                   "lineFilter"       : None,
                   "movetostopline"   : True,
-                  "controlsections"  : ["section_single_configuration_calculation"], 
-                  "controlsave"      : "sectioncontrol", 
+                  "controlsections"  : ["section_single_configuration_calculation"],
+                  "controlsave"      : "sectioncontrol",
                   "controldict"      : "stepcontrolDict",
                   #"parsercntrlattr"  : "MDcurrentstep",
                   #"parsercntrlin"    : "logsteps",
-                  #"lookupdict"       : "stepcontrolDict" 
+                  #"lookupdict"       : "stepcontrolDict"
                   }
               },
             # thermostat save Parser
@@ -2597,16 +2596,16 @@ class TINKERParser(SmartParser.ParserBase):
               #"waitlist"          : [["md_step_parser"]],
               "stopOnMatchStr"    : "AlwaysStop",
               "quitOnMatchStr"    : "AlwaysStop",
-              "metaNameStart"     : PARSERTAG + "_mdout_", 
+              "metaNameStart"     : PARSERTAG + "_mdout_",
               "matchNameList"     : mddataNameList,
               "matchNameDict"     : "mddataDict",
               "updateMatchDict"   : False,
               "onlyCaseSensitive" : False,
               "stopOnFirstLine"   : False,
-              "parserOptions"     : { 
-                  "dictionary"       : "stepcontrolDict", 
+              "parserOptions"     : {
+                  "dictionary"       : "stepcontrolDict",
                   "dicttype"         : "standard", # (standard or smartparser)
-                  "readwritedict"    : "write", 
+                  "readwritedict"    : "write",
                   "keyMapper"        : {"MD Step"         : "MDcurrentstep",
                                         "Dynamics Steps"  : "MDcurrentstep",
                                         #"InputCoordStep"  : "MDcurrentstep",
@@ -2617,15 +2616,15 @@ class TINKERParser(SmartParser.ParserBase):
                                         "CG Iter"         : "MDcurrentstep"},
                   "updatefunc"       : "max",
                   "updateattrs"      : ["MDcurrentstep"],
-                  "controlsections"  : ["section_single_configuration_calculation"], 
-                  "controlsave"      : "sectioncontrol", 
+                  "controlsections"  : ["section_single_configuration_calculation"],
+                  "controlsave"      : "sectioncontrol",
                   "controldict"      : "stepcontrolDict",
                   "controlattrs"     : ["MDcurrentstep"],
                   "preprocess"       : self.convertInt,
                   "postprocess"      : self.convertInt,
                   #"parsercntrlattr"  : "MDcurrentstep",
                   #"parsercntrlin"    : "steps",
-                  #"lookupdict"       : "stepcontrolDict" 
+                  #"lookupdict"       : "stepcontrolDict"
                   }
               },
             # Section Control Parser
@@ -2642,16 +2641,16 @@ class TINKERParser(SmartParser.ParserBase):
               "updateMatchDict"   : False,
               "onlyCaseSensitive" : True,
               "stopOnFirstLine"   : False,
-              "parserOptions"     : { 
-                  "sectionname"      : "section_single_configuration_calculation", 
-                  "sectionopen"      : True, 
-                  "sectionopenattr"  : "MDcurrentstep", 
-                  "sectionopenin"    : "steps", 
-                  "sectionclose"     : True, 
-                  "sectioncloseattr" : "MDcurrentstep", 
-                  "sectionclosein"   : "steps", 
-                  "activatesection"  : "sectioncontrol", 
-                  "lookupdict"       : "stepcontrolDict" 
+              "parserOptions"     : {
+                  "sectionname"      : "section_single_configuration_calculation",
+                  "sectionopen"      : True,
+                  "sectionopenattr"  : "MDcurrentstep",
+                  "sectionopenin"    : "steps",
+                  "sectionclose"     : True,
+                  "sectioncloseattr" : "MDcurrentstep",
+                  "sectionclosein"   : "steps",
+                  "activatesection"  : "sectioncontrol",
+                  "lookupdict"       : "stepcontrolDict"
                   }
               },
             # Readline Control Parser
@@ -2669,18 +2668,18 @@ class TINKERParser(SmartParser.ParserBase):
               "updateMatchDict"   : False,
               "onlyCaseSensitive" : True,
               "stopOnFirstLine"   : False,
-              "parserOptions"     : { 
-                  "peeklineFirst"    : False, 
+              "parserOptions"     : {
+                  "peeklineFirst"    : False,
                   "waitatlineStr"    : r"^\s*",
-                  "controlwait"      : None, 
-                  "controlattr"      : "MDcurrentstep", 
-                  #"controlnextattr"  : "MDnextstep", 
-                  #"controllast"      : -1, 
-                  #"controlskip"      : [0], 
-                  "controlin"        : "steps", 
-                  "controlcounter"   : "targetstep", 
+                  "controlwait"      : None,
+                  "controlattr"      : "MDcurrentstep",
+                  #"controlnextattr"  : "MDnextstep",
+                  #"controllast"      : -1,
+                  #"controlskip"      : [0],
+                  "controlin"        : "steps",
+                  "controlcounter"   : "targetstep",
                   "controldict"      : "stepcontrolDict",
-                  "lookupdict"       : "stepcontrolDict" 
+                  "lookupdict"       : "stepcontrolDict"
                   }
               },
             ]
@@ -2698,7 +2697,7 @@ class TINKERParser(SmartParser.ParserBase):
               #"quitOnMatchStr"    : r"\s*(?:Molecular\s+Dynamics|Optimization)\s*",
               "stopOnMatchStr"    : r"^\s*######+$",
               "quitOnMatchStr"    : r"^\s*######+$",
-              "metaNameStart"     : None, 
+              "metaNameStart"     : None,
               "matchNameList"     : None,
               "matchNameDict"     : None,
               "updateMatchDict"   : False,
@@ -2732,20 +2731,20 @@ class TINKERParser(SmartParser.ParserBase):
               "updateMatchDict"   : False,
               "onlyCaseSensitive" : False,
               "stopOnFirstLine"   : False,
-              "parserOptions"     : { 
-                  "peeklineFirst"    : True, 
+              "parserOptions"     : {
+                  "peeklineFirst"    : True,
                   #"waitatlineStr"    : "^\s*######+\s*$",
                   "waitatlineStr"    : None,
-                  "controlwait"      : None, 
-                  "controlattr"      : "MDcurrentstep", 
-                  #"controlnextattr"  : "MDnextstep", 
-                  #"controllast"      : -1, 
-                  "controlskip"      : [-1], 
-                  "controlin"        : "opencntrlstep", 
-                  #"controlin"        : "steps", 
-                  #"controlcounter"   : "targetstep", 
+                  "controlwait"      : None,
+                  "controlattr"      : "MDcurrentstep",
+                  #"controlnextattr"  : "MDnextstep",
+                  #"controllast"      : -1,
+                  "controlskip"      : [-1],
+                  "controlin"        : "opencntrlstep",
+                  #"controlin"        : "steps",
+                  #"controlcounter"   : "targetstep",
                   #"controldict"      : "stepcontrolDict",
-                  #"lookupdict"       : "stepcontrolDict" 
+                  #"lookupdict"       : "stepcontrolDict"
                   }
               },
             ]
@@ -2765,39 +2764,39 @@ class TINKERParser(SmartParser.ParserBase):
                     SM(name='ProgramInfo',
                         startReStr=r"^\s*#+\s*Version\s*"
                                    "(?P<"+PARSERTAG+"_mdin_finline>[a-zA-Z0-9:., ]+)\s*#+",
-                       adHoc=lambda p: p.backend.addValue( 
-                           "program_version", 
+                       adHoc=lambda p: p.backend.addValue(
+                           "program_version",
                            ' '.join(p.lastMatch[
                                PARSERTAG+"_mdin_finline"
                                ].replace('\n', ' ').strip().split()))),
-                    SM(name='copyright', 
+                    SM(name='copyright',
                        startReStr=r"^\s*#+\s*Copyright\s*\(c\)\s*",
-                       coverageIgnore=True, 
-                       adHoc=lambda p: 
-                       self.adHoc_read_store_text_stop_parsing(p, 
+                       coverageIgnore=True,
+                       adHoc=lambda p:
+                       self.adHoc_read_store_text_stop_parsing(p,
                            stopOnMatchStr=r"^\s*#+\s*#+\s*$",
                            quitOnMatchStr=None,
-                           metaNameStart=PARSERTAG+"_", 
-                           metaNameStore=PARSERTAG+"_program_copyright", 
+                           metaNameStart=PARSERTAG+"_",
+                           metaNameStore=PARSERTAG+"_program_copyright",
                            matchNameList=None,
                            matchNameDict=None,
                            onlyCaseSensitive=True,
                            stopOnFirstLine=False,
                            storeFirstLine=True,
                            storeStopQuitLine=True,
-                           onQuitRunFunction=lambda p: p.backend.addValue( 
-                               PARSERTAG+"_program_copyright", 
+                           onQuitRunFunction=lambda p: p.backend.addValue(
+                               PARSERTAG+"_program_copyright",
                                ' '.join(p.lastMatch[
                                    PARSERTAG+"_program_copyright"
                                    ].replace('\n', ' ').replace('#', '').strip().split())
                                )
                            )
                        ),
-                    SM(name='newRun', 
+                    SM(name='newRun',
                        startReStr=r"^\s*$",
                        #endReStr=r"^\s*$",
                        #forwardMatch=True,
-                       adHoc=lambda p: 
+                       adHoc=lambda p:
                        self.adHoc_takingover_parsing(p,
                            stopOnMatchStr=r"^\s*#####+\s*$",
                            quitOnMatchStr=r"^\s*#####+\s*$",
@@ -2814,6 +2813,24 @@ class TINKERParser(SmartParser.ParserBase):
             ]
 
 
-if __name__ == "__main__":
-    parser = TINKERParser()
-    parser.parse()
+class TINKERParserInterface():
+   """ A proper class envolop for running this parser from within python. """
+   def __init__(self, backend, **kwargs):
+       self.backend_factory = backend
+
+   def parse(self, mainfile):
+        from unittest.mock import patch
+        logging.info('tinker parser started')
+        logging.getLogger('nomadcore').setLevel(logging.WARNING)
+        backend = self.backend_factory("tinker.nomadmetainfo.json")
+        parserInfo = {'name': 'tinker-parser', 'version': '1.0'}
+        context = TINKERParser()
+        with patch.object(sys, 'argv', ['<exe>', '--uri', 'nmd://uri', mainfile]):
+            mainFunction(
+                mainFileDescription=context.mainFileDescription(),
+                metaInfoEnv=None,
+                parserInfo=parserInfo,
+                cachingLevelForMetaName=context.cachingLevelForMetaName,
+                superContext=context,
+                superBackend=backend)
+        return backend

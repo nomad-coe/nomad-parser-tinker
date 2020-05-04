@@ -1,0 +1,11 @@
+README.md
+setup.py
+./tinkerparser/TINKERCommon.py
+./tinkerparser/TINKERDictionary.py
+./tinkerparser/TINKERParser.py
+./tinkerparser/__init__.py
+./tinkerparser.egg-info/PKG-INFO
+./tinkerparser.egg-info/SOURCES.txt
+./tinkerparser.egg-info/dependency_links.txt
+./tinkerparser.egg-info/requires.txt
+./tinkerparser.egg-info/top_level.txt
