@@ -1,1 +1,1 @@
-from .TINKERParser import TINKERParserInterface as TINKERParser
+from .TINKERParser import TINKERParserInterface as TinkerParser

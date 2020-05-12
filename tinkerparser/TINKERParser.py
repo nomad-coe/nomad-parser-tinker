@@ -22,10 +22,13 @@ import sys
 import datetime
 import io
 import fnmatch
+from nomadcore.simple_parser import mainFunction
 
 ############################################################
 # This is the parser for the main file of TINKER.
 ############################################################
+
+parser = None
 
 #PRINTABLE = re.compile(r"\W+")
 
@@ -2825,6 +2828,7 @@ class TINKERParserInterface():
         backend = self.backend_factory("tinker.nomadmetainfo.json")
         parserInfo = {'name': 'tinker-parser', 'version': '1.0'}
         context = TINKERParser()
+        context.coverageIgnore = re.compile(r"^(?:" + r"|".join(context.coverageIgnoreList) + r")$")
         with patch.object(sys, 'argv', ['<exe>', '--uri', 'nmd://uri', mainfile]):
             mainFunction(
                 mainFileDescription=context.mainFileDescription(),
