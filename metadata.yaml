@@ -1,7 +1,9 @@
 codeLabel: Tinker
 codeLabelStyle: 'Capitals: T'
+codeName: tinker
 codeUrl: https://dasher.wustl.edu/tinker/
 parserDirName: dependencies/parsers/tinker/
-parserGitUrl: https://gitlab.mpcdf.mpg.de/nomad-lab/parser-tinker
+parserGitUrl: https://github.com/nomad-coe/nomad-parser-tinker.git
 parserSpecific: ''
+preamble: ''
 tableOfFiles: ''
