@@ -36,18 +36,18 @@ def test_basic(parser):
 
     parser.parse('tests/data/argon/argon.log', archive, None)
 
-    sec_run = archive.section_run[0]
-    assert sec_run.program_version == 'Version 8.0'
+    sec_run = archive.run[0]
+    assert sec_run.program.version == 'Version 8.0'
 
-    sec_systems = archive.section_run[0].section_system
+    sec_systems = archive.run[0].system
     assert len(sec_systems) == 6
-    assert sec_systems[1].lattice_vectors[1][1].magnitude == approx(2.60206e-09)
-    assert sec_systems[2].atom_labels[149] == 'Ar'
-    assert sec_systems[4].atom_positions[3][2].magnitude == approx(-5.504464e-10)
+    assert sec_systems[1].atoms.lattice_vectors[1][1].magnitude == approx(2.60206e-09)
+    assert sec_systems[2].atoms.labels[149] == 'Ar'
+    assert sec_systems[4].atoms.positions[3][2].magnitude == approx(-5.504464e-10)
 
-    sec_sccs = sec_run.section_single_configuration_calculation
+    sec_sccs = sec_run.calculation
     assert len(sec_sccs) == 30
-    assert sec_sccs[5].energy_total.magnitude == approx(-5.42430901e-19)
+    assert sec_sccs[5].energy.total.value.magnitude == approx(-5.42430901e-19)
 
 
 def test_1(parser):
@@ -55,10 +55,10 @@ def test_1(parser):
 
     parser.parse('tests/data/ice/ice.log', archive, None)
 
-    sec_systems = archive.section_run[0].section_system
+    sec_systems = archive.run[0].system
     assert len(sec_systems) == 2
-    assert sec_systems[0].lattice_vectors[2][0].magnitude == approx(-1.412639061e-09)
-    assert len(sec_systems[0].atom_positions) == 3024
-    assert sec_systems[0].atom_labels[3017] == 'H'
-    assert sec_systems[0].atom_positions[2985][0].magnitude == approx(-1.4647033e-09)
-    assert sec_systems[1].atom_positions[2][0].magnitude == approx(5.613374e-10)
+    assert sec_systems[0].atoms.lattice_vectors[2][0].magnitude == approx(-1.412639061e-09)
+    assert len(sec_systems[0].atoms.positions) == 3024
+    assert sec_systems[0].atoms.labels[3017] == 'H'
+    assert sec_systems[0].atoms.positions[2985][0].magnitude == approx(-1.4647033e-09)
+    assert sec_systems[1].atoms.positions[2][0].magnitude == approx(5.613374e-10)
