@@ -15,5 +15,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-import tinkerparser.metainfo.tinker
+from nomad.metainfo import Environment
+
+from . import tinker
+
+m_env = Environment()
+m_env.m_add_sub_section(Environment.packages, tinker.m_package)
