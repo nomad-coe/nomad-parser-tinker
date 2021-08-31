@@ -1,1 +1,1 @@
-nomadcore
+nomad-lab
