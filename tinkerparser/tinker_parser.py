@@ -110,7 +110,7 @@ class RunParser(TextParser):
             ),
             Quantity(
                 'single_point',
-                'vibrate +(\S+ +\-*k* *\S+.+)',
+                r'vibrate +(\S+ +\-*k* *\S+.+)',
                 repeats=True, str_operation=to_argument
             )
         ]
