@@ -17,10 +17,9 @@
 # limitations under the License.
 #
 import numpy as np            # pylint: disable=unused-import
-import typing                 # pylint: disable=unused-import
 from nomad.metainfo import (  # pylint: disable=unused-import
     MSection, MCategory, Category, Package, Quantity, Section, SubSection, SectionProxy,
-    Reference
+    Reference, JSON
 )
 from nomad.datamodel.metainfo import simulation
 from nomad.datamodel.metainfo import workflow
@@ -388,7 +387,7 @@ class x_tinker_section_control_parameters(MSection):
         ''')
 
     x_tinker_inout_control_ewald_cutoff = Quantity(
-        type=bool,
+        type=str,
         shape=[],
         description='''
         tinker running environment and control parameters.
@@ -795,7 +794,6 @@ class MolecularDynamics(workflow.MolecularDynamics):
     x_tinker_barostat_tau = Quantity(
         type=np.dtype(np.float64),
         shape=[],
-        unit='second',
         description='''
         MD barostat relaxation time.
         ''')
@@ -875,6 +873,43 @@ class MolecularDynamics(workflow.MolecularDynamics):
         ''')
 
 
+class GeometryOptimization(workflow.GeometryOptimization):
+
+    m_def = Section(validate=False, extends_base_section=True)
+
+    x_tiner_final_function_value = Quantity(
+        type=np.dtype(np.float64),
+        shape=[],
+        unit='newton',
+        description='''
+        Final value of the energy.
+        ''')
+
+    x_tinker_final_rms_gradient = Quantity(
+        type=np.dtype(np.float64),
+        shape=[],
+        unit='newton',
+        description='''
+        Tolerance value of the RMS gradient for structure minimization.
+        ''')
+
+    x_tinker_final_gradient_norm = Quantity(
+        type=np.dtype(np.float64),
+        shape=[],
+        unit='newton',
+        description='''
+        Tolerance value of the RMS gradient for structure minimization.
+        ''')
+
+    x_tinker_final_gradient_norm = Quantity(
+        type=np.dtype(np.float64),
+        shape=[],
+        unit='newton',
+        description='''
+        Tolerance value of the RMS gradient for structure minimization.
+        ''')
+
+
 class AtomParameters(simulation.method.AtomParameters):
 
     m_def = Section(validate=False, extends_base_section=True)
@@ -891,6 +926,12 @@ class AtomParameters(simulation.method.AtomParameters):
         shape=[],
         description='''
         Atom type of an atom in topology definition.
+        ''')
+
+    x_tinker_atom_resid = Quantity(
+        type=np.dtype(np.int32),
+        shape=[],
+        description='''
         ''')
 
     x_tinker_atom_element = Quantity(
@@ -1138,6 +1179,13 @@ class Run(simulation.run.Run):
         sub_section=SectionProxy('x_tinker_section_control_parameters'),
         repeats=True)
 
+    x_tinker_control_parameters = Quantity(
+        type=JSON,
+        shape=[],
+        description='''
+        Parameters read from key file'''
+    )
+
 
 class Calculation(simulation.calculation.Calculation):
 
@@ -1146,3 +1194,15 @@ class Calculation(simulation.calculation.Calculation):
     x_tinker_section_single_configuration_calculation = SubSection(
         sub_section=SectionProxy('x_tinker_section_single_configuration_calculation'),
         repeats=True)
+
+
+class Vibrations(simulation.calculation.Vibrations):
+
+    m_def = Section(validate=False, extends_base_section=True)
+
+    x_tinker_eigenvalues = Quantity(
+        type=np.dtype(np.float64),
+        shape=['n_frequencies'],
+        description='''
+        '''
+    )
